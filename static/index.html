@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f5f5ef" />
+    <title>Reachframe · X visibility workspace</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <div class="shell bar">
+        <a href="/" class="brand"
+          ><span class="mark" aria-hidden="true">◫</span> Reachframe</a
+        >
+        <nav aria-label="Workspace">
+          <a href="#check">Check</a><a href="#monitor">Watchlist</a
+          ><a href="#history">History</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell">
+      <section class="hero" aria-labelledby="title">
+        <div>
+          <p class="eyebrow">PUBLIC VISIBILITY ON X</p>
+          <h1 id="title">
+            See what others<br />
+            can find<span>.</span>
+          </h1>
+          <p class="intro">
+            Check how a public account appears in X search and conversations.
+            Save what you see and track changes over time.
+          </p>
+        </div>
+        <div class="diagram" aria-hidden="true">
+          <div class="orbit outer"></div>
+          <div class="orbit mid"></div>
+          <div class="orbit inner"></div>
+          <div class="beam"></div>
+          <i></i><b></b><span>SEARCH</span><em>REPLIES</em>
+        </div>
+      </section>
+      <section id="check" class="panel" aria-labelledby="check-title">
+        <div class="section-head">
+          <div>
+            <h2 id="check-title">Check an account</h2>
+            <p>Start with a public X handle.</p>
+          </div>
+          <button id="demo" class="secondary" type="button">
+            View sample report
+          </button>
+        </div>
+        <form id="handle-form">
+          <label for="handle">X handle</label>
+          <div class="form-row">
+            <div class="input">
+              <span aria-hidden="true">@</span
+              ><input
+                id="handle"
+                placeholder="yourhandle"
+                autocomplete="off"
+                autocapitalize="none"
+                maxlength="16"
+                required
+              />
+            </div>
+            <button type="submit">
+              Start guided check <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </form>
+        <p id="notice" role="status" aria-live="polite"></p>
+        <div id="guided" hidden>
+          <form id="guided-form">
+            <div id="questions" class="grid"></div>
+            <div class="actions">
+              <button type="submit">Save observations</button
+              ><button type="button" class="secondary" id="watch-add">
+                Add to watchlist
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <section
+        id="report"
+        class="panel"
+        aria-label="Visibility report"
+        hidden
+        tabindex="-1"
+      ></section>
+      <div class="lower">
+        <section id="monitor" class="panel">
+          <h2>Watchlist</h2>
+          <p id="monitor-mode">Loading workspace…</p>
+          <ul id="watch-list"></ul>
+          <h3>Change alerts</h3>
+          <ul id="changes"></ul>
+        </section>
+        <section id="history" class="panel">
+          <h2>Scan history</h2>
+          <p>Reopen an observation to review its evidence and next steps.</p>
+          <ul id="history-list"></ul>
+        </section>
+      </div>
+      <section class="method">
+        <h2>How to read a report</h2>
+        <p>
+          Check from a viewer account that has no history with the handle.
+          Search and replies can vary by viewer. A missing result describes what
+          you observed on that surface. The coverage count shows how many
+          surfaces you could assess. Check any account notices in X for official
+          moderation information.
+        </p>
+      </section>
+    </main>
+    <footer class="shell">
+      <span>Reachframe</span><span>Independent visibility workspace for X</span>
+    </footer>
+  </body>
+</html>
