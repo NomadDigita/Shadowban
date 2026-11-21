@@ -1,79 +1,111 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#f5f5ef" />
-    <title>Reachframe · X visibility workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Check where a public X account appears, save your observations, and follow changes over time."
+    />
+    <meta name="theme-color" content="#f6f7fb" />
+    <title>Reachframe · Visibility workspace</title>
     <link rel="stylesheet" href="/style.css" />
-    <script src="/app.js" defer></script>
+    <script src="/app.js"></script>
   </head>
   <body>
-    <header>
-      <div class="shell bar">
-        <a href="/" class="brand"
-          ><span class="mark" aria-hidden="true">◫</span> Reachframe</a
+    <a class="skip-link" href="#main">Skip to content</a>
+    <aside class="rail">
+      <a href="#main" class="brand"
+        ><span class="mark" aria-hidden="true">◩</span>Reachframe</a
+      >
+      <nav aria-label="Workspace">
+        <a href="#check"
+          ><span aria-hidden="true">⌁</span> <span>Check</span></a
         >
-        <nav aria-label="Workspace">
-          <a href="#check">Check</a><a href="#monitor">Watchlist</a
-          ><a href="#history">History</a>
-        </nav>
-      </div>
-    </header>
-    <main class="shell">
-      <section class="hero" aria-labelledby="title">
-        <div>
-          <p class="eyebrow">PUBLIC VISIBILITY ON X</p>
-          <h1 id="title">
-            See what others<br />
-            can find<span>.</span>
-          </h1>
-          <p class="intro">
-            Check how a public account appears in X search and conversations.
-            Save what you see and track changes over time.
-          </p>
-        </div>
-        <div class="diagram" aria-hidden="true">
-          <div class="orbit outer"></div>
-          <div class="orbit mid"></div>
-          <div class="orbit inner"></div>
-          <div class="beam"></div>
-          <i></i><b></b><span>SEARCH</span><em>REPLIES</em>
-        </div>
-      </section>
-      <section id="check" class="panel" aria-labelledby="check-title">
-        <div class="section-head">
-          <div>
-            <h2 id="check-title">Check an account</h2>
-            <p>Start with a public X handle.</p>
-          </div>
-          <button id="demo" class="secondary" type="button">
-            View sample report
+        <a href="#monitor"
+          ><span aria-hidden="true">◎</span> <span>Watchlist</span></a
+        >
+        <a href="#history"
+          ><span aria-hidden="true">◷</span> <span>History</span></a
+        >
+      </nav>
+      <a class="rail-help" href="#method"
+        >How checks work <span aria-hidden="true">→</span></a
+      >
+    </aside>
+    <main id="main" class="workspace">
+      <div class="topbar">
+        <span>Visibility workspace</span>
+        <div class="themes" role="group" aria-label="Color theme">
+          <button type="button" data-theme-choice="light" aria-pressed="true">
+            Light
+          </button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">
+            Dark
           </button>
         </div>
-        <form id="handle-form">
-          <label for="handle">X handle</label>
-          <div class="form-row">
-            <div class="input">
-              <span aria-hidden="true">@</span
-              ><input
-                id="handle"
-                placeholder="yourhandle"
-                autocomplete="off"
-                autocapitalize="none"
-                maxlength="16"
-                required
-              />
-            </div>
-            <button type="submit">
-              Start guided check <span aria-hidden="true">↗</span>
+      </div>
+      <section id="check" class="panel check" aria-labelledby="title">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">
+              <span aria-hidden="true"></span> X VISIBILITY CHECK
+            </p>
+            <h1 id="title">
+              See where your<br />
+              account shows up.
+            </h1>
+            <p>
+              Check what another viewer can find in X search and replies. Save a
+              baseline and see what changes.
+            </p>
+            <form id="handle-form">
+              <label for="handle">Public X handle</label>
+              <div class="form-row">
+                <div class="input">
+                  <span aria-hidden="true">@</span
+                  ><input
+                    id="handle"
+                    placeholder="yourhandle"
+                    autocomplete="off"
+                    autocapitalize="none"
+                    maxlength="16"
+                    required
+                  />
+                </div>
+                <button type="submit">
+                  Start check <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </form>
+            <button id="demo" type="button" class="text-button">
+              Explore a sample report <span aria-hidden="true">→</span>
             </button>
           </div>
-        </form>
+          <div class="signal-map" aria-hidden="true">
+            <div class="map-grid"></div>
+            <div class="rings"></div>
+            <div class="map-core">◩</div>
+            <span class="map-label map-a"><i></i> Suggestions</span>
+            <span class="map-label map-b"><i></i> Post search</span>
+            <span class="map-label map-c"><i></i> Reply presence</span>
+            <span class="map-label map-d"><i></i> Reply placement</span>
+          </div>
+        </div>
         <p id="notice" role="status" aria-live="polite"></p>
-        <div id="guided" hidden>
+        <div id="guided" class="guided" hidden>
+          <div class="panel-head">
+            <div>
+              <h2 id="guide-title">Guided observations</h2>
+              <p>
+                Use a separate viewer account and mark each surface you can
+                check.
+              </p>
+            </div>
+            <span id="progress" class="pill">0 of 4 recorded</span>
+          </div>
           <form id="guided-form">
-            <div id="questions" class="grid"></div>
+            <div id="questions" class="signal-grid"></div>
             <div class="actions">
               <button type="submit">Save observations</button
               ><button type="button" class="secondary" id="watch-add">
@@ -85,38 +117,66 @@
       </section>
       <section
         id="report"
-        class="panel"
+        class="panel report"
         aria-label="Visibility report"
         hidden
         tabindex="-1"
       ></section>
-      <div class="lower">
-        <section id="monitor" class="panel">
-          <h2>Watchlist</h2>
+      <div class="dashboard">
+        <section id="monitor" class="panel dashboard-panel">
+          <div class="panel-head">
+            <h2>Watchlist</h2>
+            <span id="watch-count" class="pill">0 accounts</span>
+          </div>
           <p id="monitor-mode">Loading workspace…</p>
-          <ul id="watch-list"></ul>
-          <h3>Change alerts</h3>
-          <ul id="changes"></ul>
+          <ul id="watch-list" class="activity"></ul>
+          <details id="monitor-details">
+            <summary>Automatic monitoring and costs</summary>
+            <p>
+              Scheduled checks cover post search. They require an
+              operator-provided X API token and daily scan budget. X may charge
+              the operator for requests. Guided checks and in-app alerts are
+              available without API setup.
+            </p>
+          </details>
         </section>
-        <section id="history" class="panel">
-          <h2>Scan history</h2>
-          <p>Reopen an observation to review its evidence and next steps.</p>
-          <ul id="history-list"></ul>
+        <section id="history" class="panel dashboard-panel">
+          <div class="panel-head">
+            <h2>Scan history</h2>
+            <span id="scan-count" class="pill">0 scans</span>
+          </div>
+          <p>
+            Reopen a dated report or compare it with an earlier observation.
+          </p>
+          <label class="filter" for="history-filter" hidden
+            >Filter by account
+            <select id="history-filter"></select
+          ></label>
+          <ul id="history-list" class="activity"></ul>
+        </section>
+        <section id="activity" class="panel dashboard-panel changes">
+          <div class="panel-head">
+            <h2>Change alerts</h2>
+            <span id="change-count" class="pill">0 changes</span>
+          </div>
+          <p>
+            See measured changes between reports for the same account and
+            evidence source.
+          </p>
+          <ul id="changes" class="activity"></ul>
         </section>
       </div>
-      <section class="method">
-        <h2>How to read a report</h2>
+      <section id="method" class="panel dashboard-panel method">
+        <h2>How checks work</h2>
         <p>
-          Check from a viewer account that has no history with the handle.
-          Search and replies can vary by viewer. A missing result describes what
-          you observed on that surface. The coverage count shows how many
-          surfaces you could assess. Check any account notices in X for official
-          moderation information.
+          Results reflect what a specific viewer could see at the time of the
+          check. Unmeasured surfaces stay out of the visibility score. For
+          official moderation information, review any notices in X.
         </p>
       </section>
+      <footer>
+        Reachframe <span>Independent visibility workspace for X</span>
+      </footer>
     </main>
-    <footer class="shell">
-      <span>Reachframe</span><span>Independent visibility workspace for X</span>
-    </footer>
   </body>
 </html>

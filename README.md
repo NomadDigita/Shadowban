@@ -6,13 +6,15 @@ Reachframe is an independent workspace for checking how a public X account appea
 
 Requires Python 3.11 or newer with SQLite support. The app uses only the Python standard library.
 
-Extract `Reachframe.zip` and run this command from the extracted `Reachframe` directory:
+Run this command from the repository root or from the `Reachframe` folder extracted from the ZIP.
 
 ```bash
 python3 app.py
 ```
 
 Open http://127.0.0.1:8000. Enter an X handle and start a guided check. Follow the links and record the surfaces you can verify. A report shows the share of measured surfaces that were visible alongside the number of measured surfaces. Reports show observations, which can vary by viewer. X account notices are the source for official moderation decisions.
+
+Use the Light and Dark controls to set this browser's theme. The fictional sample offers three scenarios you can explore without saving data. Saved reports can be filtered by account and compared with the previous report for that account and evidence source.
 
 Add a handle to the watchlist for quick access. When you record a changed result for the same handle and evidence source, it appears under Change alerts. An unmeasured observation does not replace the last measured result in the recent comparison window.
 
@@ -47,7 +49,7 @@ The default `reachframe.sqlite3` database is created on first startup alongside 
 
 ## Public product research
 
-The [ShadowbanRadar homepage](https://shadowbanradar.com/), [methodology](https://shadowbanradar.com/methodology), and [public demo](https://shadowbanradar.com/demo) informed the workflow. The public offering shows four distinct visibility signals, an explicit unmeasured state, dated reports and ongoing monitoring. Reachframe implements those workflow concepts with original code, design, copy and a guided workflow that remains usable without provider credentials.
+The [ShadowbanRadar homepage](https://shadowbanradar.com/), [methodology](https://shadowbanradar.com/methodology), [public demo](https://shadowbanradar.com/demo), and [monitoring overview](https://shadowbanradar.com/x-shadowban-monitoring) informed the workflow. The public offering shows four distinct visibility signals, an explicit unmeasured state, dated reports and ongoing monitoring. Reachframe implements those workflow concepts with original code, design, copy and a guided workflow that remains usable without provider credentials.
 
 Standard HTTPS requests to all three public pages returned HTTP 200 with TLS verification result 0. The official reverse-engineer-anything skill was retrieved and the REA CLI 6.10.1 was attempted. Chromium's certificate-verified session reported a privacy error (Chromium `ERR_CERT_AUTHORITY_INVALID`, network error `-202`), and REA's passive inspection returned `target_unavailable` with `target_not_allowed`. Research findings come from the verified HTTPS public pages. No login or paid workflow was used.
 
