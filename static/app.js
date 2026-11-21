@@ -93,19 +93,182 @@ function timestamp(value) {
   });
 }
 
+const STORAGE_KEY = "reachframe-local-workspace-v1";
+
+function readWorkspace() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return {
+      history: Array.isArray(saved.history) ? saved.history : [],
+      watch: Array.isArray(saved.watch) ? saved.watch : [],
+      changes: Array.isArray(saved.changes) ? saved.changes : [],
+    };
+  } catch {
+    throw new Error("This browser could not read saved workspace data.");
+  }
+}
+
+function writeWorkspace(value) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    throw new Error("This browser could not save workspace data. Check available site storage.");
+  }
+}
+
 async function api(route, data) {
-  const options = data
-    ? {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+  const workspace = readWorkspace();
+  if (route === "workspace") {
+    return { live: false, ...workspace };
+  }
+  const handle = String(data?.handle || "").trim().replace(/^@/, "").toLowerCase();
+  if (!/^[a-z0-9_]{1,15}$/.test(handle)) {
+    throw new Error("Enter a valid X handle (1–15 letters, numbers or underscores).");
+  }
+  if (route === "watch") {
+    const exists = workspace.watch.some((item) => item.handle === handle);
+    if (data.enabled === false) {
+      workspace.watch = workspace.watch.filter((item) => item.handle !== handle);
+    } else if (data.enabled === true && !exists) {
+      if (workspace.watch.length >= 20) {
+        throw new Error("This browser can watch up to 20 handles.");
       }
-    : {};
-  const response = await fetch("/api/" + route, options);
-  const result = await response.json();
-  if (!response.ok)
-    throw new Error(result.error || "The workspace could not be reached.");
-  return result;
+      workspace.watch.push({ handle, next_scan: null });
+      workspace.watch.sort((a, b) => a.handle.localeCompare(b.handle));
+    } else if (data.enabled !== true) {
+      throw new Error("Provide a watch state.");
+    }
+    writeWorkspace(workspace);
+    return { ok: true };
+  }
+  if (route !== "manual") throw new Error("This workspace action is unavailable.");
+  const values = data.results;
+  if (!values || typeof values !== "object" ||
+      fields.some(([key]) => !["visible", "missing", "unknown"].includes(values[key])) ||
+      fields.every(([key]) => values[key] === "unknown")) {
+    throw new Error("Record at least one observation before saving.");
+  }
+  const results = Object.fromEntries(fields.map(([key]) => [
+    key,
+    { status: values[key], detail: "Recorded by you using the guided check." },
+  ]));
+  const scan = { id: Date.now(), handle, source: "guided", checked: Math.floor(Date.now() / 1000), results };
+  for (const [key] of fields) {
+    const current = results[key].status;
+    if (current === "unknown") continue;
+    const previous = workspace.history.find((entry) =>
+      entry.handle === handle && entry.source === "guided" &&
+      entry.results[key].status !== "unknown");
+    if (previous && previous.results[key].status !== current) {
+      workspace.changes.unshift({
+        handle, signal: key, before: previous.results[key].status,
+        after: current, checked: scan.checked, source: "guided",
+      });
+    }
+  }
+  workspace.history.unshift(scan);
+  workspace.history = workspace.history.slice(0, 250);
+  workspace.changes = workspace.changes.slice(0, 40);
+  writeWorkspace(workspace);
+  return scan;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
+
+function downloadFile(name, type, content) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function reportData(scan) {
+  const measured = fields.filter(([key]) => scan.results[key].status !== "unknown").length;
+  const visible = fields.filter(([key]) => scan.results[key].status === "visible").length;
+  return {
+    schema_version: 1,
+    report_id: scan.id,
+    platform: "X",
+    handle: scan.handle,
+    captured_at_utc: new Date(scan.checked * 1000).toISOString(),
+    evidence_source: { id: scan.source, label: scan.source === "api" ? "X API" : "Guided observation" },
+    coverage: {
+      total_surfaces: fields.length,
+      measured_surfaces: measured,
+      visible_surfaces: visible,
+      unmeasured_surfaces: fields.length - measured,
+      visibility_percent: measured ? Math.round(100 * visible / measured) : null,
+    },
+    observations: fields.map(([key, label]) => ({
+      surface: key,
+      label,
+      outcome: scan.results[key].status,
+      outcome_label: observationLabel(key, scan.results[key].status),
+      evidence: scan.results[key].detail,
+    })),
+    limitations: [
+      "These observations do not establish an official X moderation decision.",
+      "Visibility can vary by viewer and time. Unmeasured surfaces are excluded from the visibility score.",
+      "Guided results reflect manually recorded observations.",
+    ],
+  };
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  const safe = /^[\t\r\n]/.test(text) || /^[\s]*[=+@\-＝＋＠－]/.test(text)
+    ? "'" + text : text;
+  return '"' + safe.replace(/"/g, '""') + '"';
+}
+
+function downloadHistoryCsv() {
+  const headers = ["report_id", "handle", "captured_at_utc", "evidence_source",
+    "total_surfaces", "measured_surfaces", "visible_surfaces", "unmeasured_surfaces", "visibility_percent",
+    ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence"]), "limitations"];
+  const rows = readWorkspace().history.map((scan) => {
+    const report = reportData(scan);
+    const c = report.coverage;
+    return [
+      scan.id, scan.handle, report.captured_at_utc, scan.source,
+      c.total_surfaces, c.measured_surfaces, c.visible_surfaces, c.unmeasured_surfaces, c.visibility_percent,
+      ...report.observations.flatMap((item) => [item.outcome_label, item.evidence]),
+      report.limitations.join(" "),
+    ];
+  });
+  return [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+}
+
+function openPrintReport(scan) {
+  const data = reportData(scan);
+  const rows = data.observations.map((item) =>
+    `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong><p>${escapeHtml(item.evidence)}</p></article>`
+  ).join("");
+  const limits = data.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const measured = data.coverage.measured_surfaces;
+  const score = data.coverage.visibility_percent === null ? "Unmeasured" :
+    data.coverage.visibility_percent + "% · " + data.coverage.visible_surfaces + " of " + measured + " measured surfaces visible";
+  const popup = window.open("", "_blank");
+  if (!popup) {
+    notice("Allow pop-ups to open the print report.");
+    return;
+  }
+  popup.document.write(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reachframe report · @${escapeHtml(data.handle)}</title><style>
+    body{font:16px/1.55 system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 22px;color:#202333;background:#fff}
+    h1{font-size:2rem;margin-bottom:4px}header p{color:#5e6272;margin-top:0}.score{font-size:1.5rem;font-weight:700;padding:14px 0}
+    article{border:1px solid #dfe2eb;border-radius:12px;padding:16px;margin:12px 0;break-inside:avoid}
+    article h2{font-size:1.1rem;margin:0 0 6px}article p{margin:8px 0 0}.limits{color:#545969;font-size:.9rem}
+    button{padding:10px 14px;border:0;border-radius:8px;background:#29314d;color:white;font:inherit;cursor:pointer}
+    @media print{body{margin:0 auto}.no-print{display:none}}
+  </style><body><button class="no-print" onclick="window.print()">Print / Save PDF</button><header><h1>Visibility report · @${escapeHtml(data.handle)}</h1><p>${escapeHtml(data.evidence_source.label)} · ${escapeHtml(new Date(scan.checked*1000).toLocaleString())}</p></header><div class="score">${escapeHtml(score)}</div><p>${measured} of 4 surfaces measured. Observations reflect one viewer at one point in time.</p>${rows}<h2>Limitations</h2><ul class="limits">${limits}</ul></body></html>`);
+  popup.document.close();
 }
 
 function notice(message) {
@@ -223,9 +386,21 @@ function report(scan, { focus = true } = {}) {
     actions.append(recheck, watch);
     const exports = node("div", null, "report-exports");
     const json = node("a", "Download JSON", "secondary action-link");
-    json.href = "/reports/" + scan.id + "/json";
+    json.href = "#";
+    json.addEventListener("click", (event) => {
+      event.preventDefault();
+      downloadFile(
+        "reachframe-report-" + scan.id + ".json",
+        "application/json;charset=utf-8",
+        JSON.stringify(reportData(scan), null, 2) + "\n",
+      );
+    });
     const print = node("a", "Print report", "secondary action-link");
-    print.href = "/reports/" + scan.id + "/print";
+    print.href = "#";
+    print.addEventListener("click", (event) => {
+      event.preventDefault();
+      openPrintReport(scan);
+    });
     exports.append(json, print);
     panel.append(actions, exports);
     const comparison = priorComparison(scan);
@@ -335,9 +510,12 @@ async function addToWatchlist(handle) {
 async function refresh() {
   state = await api("workspace");
   $("#csv-export").hidden = false;
-  $("#monitor-mode").textContent = state.live
-    ? "Scheduled X API post-search checks are enabled. Guided checks cover all four surfaces."
-    : "Save guided checks for watched handles to see changes here. Automatic post-search checks are off.";
+  $("#csv-export").onclick = (event) => {
+    event.preventDefault();
+    downloadFile("reachframe-history.csv", "text/csv;charset=utf-8", downloadHistoryCsv());
+  };
+  $("#monitor-mode").textContent =
+    "Saved checks, watchlist and change alerts stay in this browser on this device. Run another guided check to compare results.";
   emptyList("#watch-list", "No accounts watched yet.");
   emptyList("#changes", "No measured changes yet.");
   $("#watch-count").textContent = countLabel(state.watch.length, "account");
