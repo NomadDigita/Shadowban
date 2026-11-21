@@ -1,59 +1,38 @@
 # Reachframe
 
-Reachframe is an independent workspace for checking how a public X account appears to other viewers. It includes a guided visibility audit, dated reports, a private browser workspace, a watchlist, and in-app changes. The sample report uses fictional data. There is no application paywall.
+Reachframe is an independent workspace for checking how a public X account appears to other viewers. It includes guided visibility checks, dated reports, a watchlist, comparison history, change alerts and report exports. The sample report uses fictional data. There is no application paywall.
 
-## Run locally
+## Use the hosted app
 
-Requires Python 3.11 or newer with SQLite support. The app uses only the Python standard library.
+Enter a public X handle and start a guided check. Follow the links and record the surfaces you can verify from another viewer account. A report shows the share of measured surfaces that were visible, alongside the number of measured surfaces. Reports describe observations that can vary by viewer; X account notices remain the source for official moderation decisions.
 
-Run this command from the repository root or from the `Reachframe` folder extracted from the ZIP.
+Use the Light and Dark controls to set the browser theme. The fictional sample offers three scenarios that do not save data. Saved reports can be filtered by account and compared with the previous report for that account.
 
-```bash
-python3 app.py
-```
+Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. An unmeasured observation does not replace the last measured result in the comparison window.
 
-Open http://127.0.0.1:8000. Enter an X handle and start a guided check. Follow the links and record the surfaces you can verify. A report shows the share of measured surfaces that were visible alongside the number of measured surfaces. Reports show observations, which can vary by viewer. X account notices are the source for official moderation decisions.
+## Saved data and exports
 
-Use the Light and Dark controls to set this browser's theme. The fictional sample offers three scenarios you can explore without saving data. Saved reports can be filtered by account and compared with the previous report for that account and evidence source.
+The hosted app stores its workspace in this browser's local storage on this device. It does not require an account or send saved reports to a server. Clearing browser site data or switching browsers/devices removes access to that local workspace, so download backups you want to keep.
 
-Add a handle to the watchlist for quick access. When you record a changed result for the same handle and evidence source, it appears under Change alerts. An unmeasured observation does not replace the last measured result in the recent comparison window.
+Open a saved report and choose **Download JSON** for a versioned report, or **Print report** and choose **Print / Save PDF**. Choose **Download full history CSV** in Scan history to export saved reports, even those outside the 100 most recent displayed entries. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
 
-## Export saved reports
+Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Fictional samples are excluded. The visibility percentage is blank in CSV and null in JSON when no surfaces were measured.
 
-Open a saved report and choose **Download JSON** for a versioned file, or **Print report** for a dedicated view. In that view, choose **Print / Save PDF** and select the browser's PDF destination. The preview follows the workspace theme on screen, while the printed page uses dark text on white.
+## Automatic monitoring
 
-Choose **Download full history CSV** in Scan history to export one row per saved report in this browser workspace. The CSV includes all saved reports, even those outside the 100 most recent displayed in the app, and ignores the on-screen account filter. Fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
+Scheduled X API monitoring is disabled in the hosted static version. It requires a server-side X API credential, a durable database and scheduled job infrastructure. No X credentials are stored in this repository or browser. The guided workflow and local history work without provider credentials.
 
-Exports include UTC timestamps, evidence source, measured coverage, individual outcomes, and interpretation limits. The visibility percentage is blank in CSV and null in JSON when no surfaces were measured. Fictional samples are excluded. Report URLs require the original browser workspace cookie. Once saved to disk, JSON, CSV, and PDF files can be opened by anyone with access to the file.
+The Python service files in the repository are not used by the Vercel static deployment. They are retained as the prototype backend and must be adapted to durable cloud storage and scheduled execution before being connected to the hosted interface.
 
-## Optional X API monitoring
+## Deploy to Vercel
 
-Enable scheduled monitoring with an X developer app bearer token and an explicit daily scan budget. The app uses X User Lookup, User Posts and Recent Search. The token needs access to these endpoints. The operator is responsible for X API charges.
-
-```bash
-export X_BEARER_TOKEN='your-app-bearer-token'
-export DAILY_SCAN_BUDGET=5
-python3 app.py
-```
-
-The budget is global to the SQLite database and counts scan attempts per UTC day. Each attempt makes up to three X API requests. A handle is eligible for a scan at most once a day by default. The app must be running for scheduled scans. Watches beyond the daily budget wait until capacity is available. A positive budget enables automatic scans for all workspaces on that instance, so set a budget you can cover if you share the instance.
-
-Automatic checks compare recent original post IDs on the account timeline with X Recent Search. Only the post-search signal is populated by this integration. Account suggestions, reply presence, and reply placement use the guided workflow. A missing post is evidence about the sampled X API response. Viewer-specific rankings and X's internal labels are outside that measurement. API failures, protected profiles, missing sample posts and incomplete search responses produce unmeasured results. The live integration requires credentials and was tested with controlled provider responses.
-
-## Configuration and data
-
-- `HOST` and `PORT` set the HTTP listener, defaulting to `127.0.0.1:8000`.
-- `REACHFRAME_DB` sets the SQLite database path. Preserve the database and the browser cookie to keep access to the same workspace.
-- `SCAN_INTERVAL_SECONDS` sets the minimum time between scheduled checks, with a floor of 86,400 seconds.
-- `SECURE_COOKIE=1` enables secure cookies when serving behind HTTPS.
-
-The default `reachframe.sqlite3` database is created on first startup alongside `app.py`. The database stores anonymous workspace IDs, handles, scans, watch schedules, daily scan counts and changes. Workspaces are isolated by an opaque HTTP-only cookie. The application defaults to local use.
+The repository is configured as a static Vercel site. In the Vercel project settings, use the repository root, select **Other** as the framework, and set the output directory to `static`. No build command, install command or environment variables are required. New commits to the connected branch deploy automatically.
 
 ## Limitations
 
-- The report reflects the views you tested. It cannot confirm X moderation decisions or reproduce every viewer’s results.
-- Scheduled monitoring covers post search only. The other three checks require manual observations.
-- Alerts appear inside the workspace. The app has no email delivery or cross-device sign-in.
+- Reports reflect the views checked at that time. They cannot confirm an X moderation decision or reproduce every viewer’s results.
+- The public site does not run automated post-search checks or email alerts.
+- Workspace data is limited to this browser and device; there is no cross-device sign-in or cloud backup.
 
 ## Public product research
 
@@ -63,9 +42,8 @@ Standard HTTPS requests to all three public pages returned HTTP 200 with TLS ver
 
 ## Verify
 
-Use Python for the backend tests and Node.js for the optional JavaScript syntax check.
+Check the browser script with Node.js:
 
 ```bash
-python3 -m unittest -v
 node --check static/app.js
 ```
