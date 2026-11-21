@@ -18,6 +18,14 @@ Use the Light and Dark controls to set this browser's theme. The fictional sampl
 
 Add a handle to the watchlist for quick access. When you record a changed result for the same handle and evidence source, it appears under Change alerts. An unmeasured observation does not replace the last measured result in the recent comparison window.
 
+## Export saved reports
+
+Open a saved report and choose **Download JSON** for a versioned file, or **Print report** for a dedicated view. In that view, choose **Print / Save PDF** and select the browser's PDF destination. The preview follows the workspace theme on screen, while the printed page uses dark text on white.
+
+Choose **Download full history CSV** in Scan history to export one row per saved report in this browser workspace. The CSV includes all saved reports, even those outside the 100 most recent displayed in the app, and ignores the on-screen account filter. Fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
+
+Exports include UTC timestamps, evidence source, measured coverage, individual outcomes, and interpretation limits. The visibility percentage is blank in CSV and null in JSON when no surfaces were measured. Fictional samples are excluded. Report URLs require the original browser workspace cookie. Once saved to disk, JSON, CSV, and PDF files can be opened by anyone with access to the file.
+
 ## Optional X API monitoring
 
 Enable scheduled monitoring with an X developer app bearer token and an explicit daily scan budget. The app uses X User Lookup, User Posts and Recent Search. The token needs access to these endpoints. The operator is responsible for X API charges.

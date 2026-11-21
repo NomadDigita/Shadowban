@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f7fb">
+    <title>Visibility report for @$handle · Reachframe</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js"></script>
+  </head>
+  <body>
+    <main class="print-layout">
+      <div class="print-controls">
+        <a href="/#history">← Back to history</a>
+        <button id="print-report" type="button">Print / Save PDF</button>
+      </div>
+      <article class="panel print-document">
+        <p class="eyebrow">REACHFRAME · VISIBILITY REPORT</p>
+        <h1>@$handle</h1>
+        <dl class="print-facts">
+          <div><dt>Captured</dt><dd><time datetime="$timestamp">$date</time></dd></div>
+          <div><dt>Evidence source</dt><dd>$source</dd></div>
+          <div><dt>Measured coverage</dt><dd>$measured of $total surfaces</dd></div>
+          <div><dt>Visibility score</dt><dd>$score</dd></div>
+        </dl>
+        <div class="signal-grid">$observations</div>
+        <section class="print-limits" aria-labelledby="limits">
+          <h2 id="limits">Interpretation limits</h2>
+          <ul>$limitations</ul>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

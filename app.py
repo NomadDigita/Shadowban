@@ -10,9 +10,12 @@ from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from string import Template
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+from reports import SURFACES, history_csv, print_html, report_data
 
 ROOT = Path(__file__).resolve().parent
 DB = os.getenv("REACHFRAME_DB", str(ROOT / "reachframe.sqlite3"))
@@ -20,7 +23,7 @@ TOKEN = os.getenv("X_BEARER_TOKEN")
 DAILY_BUDGET = max(0, int(os.getenv("DAILY_SCAN_BUDGET", "0")))
 AUTOMATIC = bool(TOKEN and DAILY_BUDGET)
 INTERVAL = max(86400, int(os.getenv("SCAN_INTERVAL_SECONDS", "86400")))
-SIGNALS = ("suggestions", "search", "thread", "placement")
+SIGNALS = tuple(SURFACES)
 STATUSES = ("visible", "missing", "unknown")
 
 
@@ -172,13 +175,16 @@ def scheduled_scan():
 
 
 class Handler(BaseHTTPRequestHandler):
-    def send(self, data, status=200, content_type="application/json"):
-        if content_type == "application/json":
+    def send(self, data, status=200, content_type="application/json", *, filename=None):
+        if isinstance(data, dict):
             data = json.dumps(data).encode()
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Referrer-Policy", "no-referrer")
+        if filename:
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Security-Policy",
                          "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
@@ -206,6 +212,13 @@ class Handler(BaseHTTPRequestHandler):
         if path in assets:
             name, kind = assets[path]
             return self.send((ROOT / "static" / name).read_bytes(), content_type=kind + "; charset=utf-8")
+        report_route = re.fullmatch(r"/reports/([1-9][0-9]{0,18})/(json|print)", path)
+        if report_route:
+            report_id = int(report_route[1])
+            if report_id <= 2**63 - 1:
+                return self.saved_report(report_id, report_route[2])
+        if path == "/reports/history.csv":
+            return self.saved_history()
         if path != "/api/workspace":
             return self.send({"error": "Page unavailable."}, 404)
         with database() as conn:
@@ -219,6 +232,33 @@ class Handler(BaseHTTPRequestHandler):
             changes = [dict(row) for row in conn.execute(
                 "SELECT handle,signal,before,after,checked,source FROM changes WHERE owner=? ORDER BY id DESC LIMIT 40", (owner,))]
         return self.send({"live": AUTOMATIC, "history": history, "watch": watch, "changes": changes})
+
+    def saved_report(self, report_id, mode):
+        with database() as conn:
+            row = conn.execute("""
+                SELECT id,handle,source,checked,results FROM scans WHERE owner=? AND id=?
+            """, (self.owner(conn), report_id)).fetchone()
+        if row is None:
+            return self.send({"error": "Saved report unavailable."}, 404)
+        report = report_data(row)
+        if mode == "json":
+            data = (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+            return self.send(data, content_type="application/json; charset=utf-8",
+                             filename=f"reachframe-report-{report_id}.json")
+        template = Template((ROOT / "static" / "print.html").read_text(encoding="utf-8"))
+        return self.send(print_html(report, template), content_type="text/html; charset=utf-8")
+
+    def saved_history(self):
+        with database() as conn:
+            owner = self.owner(conn)
+            if owner is None:
+                return self.send({"error": "Saved history unavailable."}, 404)
+            rows = conn.execute("""
+                SELECT id,handle,source,checked,results FROM scans WHERE owner=? ORDER BY id DESC
+            """, (owner,))
+            data = history_csv(rows)
+        return self.send(data, content_type="text/csv; charset=utf-8",
+                         filename="reachframe-history.csv")
 
     def do_POST(self):
         path = self.path

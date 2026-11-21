@@ -221,7 +221,13 @@ function report(scan, { focus = true } = {}) {
       }),
     );
     actions.append(recheck, watch);
-    panel.append(actions);
+    const exports = node("div", null, "report-exports");
+    const json = node("a", "Download JSON", "secondary action-link");
+    json.href = "/reports/" + scan.id + "/json";
+    const print = node("a", "Print report", "secondary action-link");
+    print.href = "/reports/" + scan.id + "/print";
+    exports.append(json, print);
+    panel.append(actions, exports);
     const comparison = priorComparison(scan);
     if (comparison) panel.insertBefore(comparison, advice);
   }
@@ -328,6 +334,7 @@ async function addToWatchlist(handle) {
 
 async function refresh() {
   state = await api("workspace");
+  $("#csv-export").hidden = false;
   $("#monitor-mode").textContent = state.live
     ? "Scheduled X API post-search checks are enabled. Guided checks cover all four surfaces."
     : "Save guided checks for watched handles to see changes here. Automatic post-search checks are off.";
@@ -472,6 +479,11 @@ function showSample(scenario, focus = true) {
 
 document.addEventListener("DOMContentLoaded", () => {
   setTheme(storedTheme());
+  const print = $("#print-report");
+  if (print) {
+    print.addEventListener("click", () => window.print());
+    return;
+  }
   setNavigation();
   window.addEventListener("hashchange", setNavigation);
   for (const button of document.querySelectorAll("[data-theme-choice]")) {

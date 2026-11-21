@@ -683,3 +683,121 @@ footer {
     flex-wrap: wrap;
   }
 }
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-weight: 680;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+#csv-export {
+  margin-top: 8px;
+}
+.report-exports,
+.print-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 13px;
+}
+.print-layout {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: clamp(13px, 4vw, 30px);
+}
+.print-controls {
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+.print-document {
+  padding: clamp(16px, 4vw, 32px);
+  overflow-wrap: anywhere;
+}
+.print-document h1 {
+  font-size: clamp(1.8rem, 7vw, 3.1rem);
+}
+.print-document h2 {
+  font-size: 1.05rem;
+}
+.print-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 17px 0;
+}
+.print-facts dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.print-facts dd {
+  margin: 0;
+  font-weight: 650;
+}
+.print-limits {
+  margin-top: 18px;
+}
+.print-limits ul {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+@media (max-width: 430px) {
+  .print-facts {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  @page {
+    margin: 15mm;
+  }
+  :root,
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --bg: #fff;
+    --surface: #fff;
+    --subtle: #fff;
+    --ink: #171717;
+    --muted: #333;
+    --line: #999;
+    --accent: #222;
+    --good: #171717;
+    --good-bg: #fff;
+    --warn: #171717;
+    --warn-bg: #fff;
+  }
+  .print-controls {
+    display: none;
+  }
+  .print-layout,
+  .print-document {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  .print-document {
+    border: 0;
+    box-shadow: none;
+  }
+  .print-document h1 {
+    font-size: 24pt;
+  }
+  .print-document .signal-grid,
+  .print-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .print-document .card,
+  .print-facts > div {
+    break-inside: avoid;
+  }
+  .print-document .badge {
+    border: 1px solid #999;
+  }
+  .print-document h2 {
+    break-after: avoid;
+  }
+}
