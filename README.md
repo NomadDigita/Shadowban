@@ -4,7 +4,9 @@ Reachframe is an independent workspace for checking how a public X account appea
 
 ## Run locally
 
-Requires Python 3.11+ with SQLite support. No application dependencies are installed.
+Requires Python 3.11 or newer with SQLite support. The app uses only the Python standard library.
+
+Extract `Reachframe.zip` and run this command from the extracted `Reachframe` directory:
 
 ```bash
 python3 app.py
@@ -35,7 +37,13 @@ Automatic checks compare recent original post IDs on the account timeline with X
 - `SCAN_INTERVAL_SECONDS` sets the minimum time between scheduled checks, with a floor of 86,400 seconds.
 - `SECURE_COOKIE=1` enables secure cookies when serving behind HTTPS.
 
-The database stores anonymous workspace IDs, handles, scans, watch schedules, daily scan counts and changes. Workspaces are isolated by an opaque HTTP-only cookie. There is no cross-device account recovery or external notification delivery. The application defaults to local use.
+The default `reachframe.sqlite3` database is created on first startup alongside `app.py`. The database stores anonymous workspace IDs, handles, scans, watch schedules, daily scan counts and changes. Workspaces are isolated by an opaque HTTP-only cookie. The application defaults to local use.
+
+## Limitations
+
+- The report reflects the views you tested. It cannot confirm X moderation decisions or reproduce every viewer’s results.
+- Scheduled monitoring covers post search only. The other three checks require manual observations.
+- Alerts appear inside the workspace. The app has no email delivery or cross-device sign-in.
 
 ## Public product research
 
@@ -44,6 +52,8 @@ The [ShadowbanRadar homepage](https://shadowbanradar.com/), [methodology](https:
 Standard HTTPS requests to all three public pages returned HTTP 200 with TLS verification result 0. The official reverse-engineer-anything skill was retrieved and the REA CLI 6.10.1 was attempted. Chromium's certificate-verified session reported a privacy error (Chromium `ERR_CERT_AUTHORITY_INVALID`, network error `-202`), and REA's passive inspection returned `target_unavailable` with `target_not_allowed`. Research findings come from the verified HTTPS public pages. No login or paid workflow was used.
 
 ## Verify
+
+Use Python for the backend tests and Node.js for the optional JavaScript syntax check.
 
 ```bash
 python3 -m unittest -v
