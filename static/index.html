@@ -10,7 +10,9 @@
     <meta name="theme-color" content="#f6f7fb" />
     <title>Reachframe · Visibility workspace</title>
     <link rel="stylesheet" href="/style.css" />
-    <script src="/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" defer></script>
+    <script src="/config.js" defer></script>
+    <script src="/app.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -36,6 +38,23 @@
     <main id="main" class="workspace">
       <div class="topbar">
         <span>Visibility workspace</span>
+        <div class="account">
+          <span id="auth-status" class="account-status">Guest workspace</span>
+          <details id="auth-panel">
+            <summary>Account</summary>
+            <form id="auth-form" aria-label="Sign in or create an account">
+              <label for="auth-email">Email</label>
+              <input id="auth-email" type="email" autocomplete="email" required />
+              <label for="auth-password">Password</label>
+              <input id="auth-password" type="password" autocomplete="current-password" minlength="8" required />
+              <div class="auth-actions">
+                <button id="auth-submit" type="submit">Sign in</button>
+                <button id="auth-mode" type="button" class="text-button">Create account</button>
+                <button id="auth-signout" type="button" class="secondary" hidden>Sign out</button>
+              </div>
+            </form>
+          </details>
+        </div>
         <div class="themes" role="group" aria-label="Color theme">
           <button type="button" data-theme-choice="light" aria-pressed="true">
             Light
@@ -56,8 +75,7 @@
               account shows up.
             </h1>
             <p>
-              Check what another viewer can find in X search and replies. Save a
-              baseline and see what changes. Reports stay in this browser on this device.
+              Check what another viewer can find in X search and replies. Save a baseline and see what changes. Guest reports stay on this device; signing in syncs reports and watchlists to your account.
             </p>
             <form id="handle-form">
               <label for="handle">Public X handle</label>
@@ -133,9 +151,7 @@
           <details id="monitor-details">
             <summary>About automatic monitoring</summary>
             <p>
-              Automatic X API monitoring is off in this hosted version. Use
-              guided checks to record what you can verify. Watchlists and
-              change alerts are stored locally in this browser.
+              Scheduled X API monitoring is not enabled. Guided checks save to your signed-in cloud workspace or, for guests, this browser.
             </p>
           </details>
         </section>
