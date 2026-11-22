@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Check where a public X account appears, save your observations, and follow changes over time."
-    />
-    <meta name="theme-color" content="#f6f7fb" />
-    <title>Reachframe · Visibility workspace</title>
+    <meta name="description" content="A clear, evidence-led workspace for checking what other viewers can find on X and tracking what changes." />
+    <meta name="theme-color" content="#f5f4f0" />
+    <title>Reachframe — X visibility, with evidence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;650;700;750;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" defer></script>
     <script src="/config.js" defer></script>
@@ -16,37 +16,27 @@
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <aside class="rail">
-      <a href="#main" class="brand"
-        ><span class="mark" aria-hidden="true">◩</span>Reachframe</a
-      >
-      <nav aria-label="Workspace">
-        <a href="#check"
-          ><span aria-hidden="true">⌁</span> <span>Check</span></a
-        >
-        <a href="#monitor"
-          ><span aria-hidden="true">◎</span> <span>Watchlist</span></a
-        >
-        <a href="#history"
-          ><span aria-hidden="true">◷</span> <span>History</span></a
-        >
+    <header class="site-header">
+      <a href="#main" class="brand" aria-label="Reachframe home">
+        <span class="brand-mark" aria-hidden="true"><i></i><b></b><em></em></span>
+        <span>reachframe<span class="brand-period">.</span></span>
+      </a>
+      <nav class="primary-nav" aria-label="Workspace">
+        <a href="#check" aria-current="location"><span class="nav-dot"></span>Check</a>
+        <a href="#monitor"><span class="nav-icon" aria-hidden="true">◷</span>Watchlist</a>
+        <a href="#history"><span class="nav-icon" aria-hidden="true">⌁</span>History</a>
       </nav>
-      <a class="rail-help" href="#method"
-        >How checks work <span aria-hidden="true">→</span></a
-      >
-    </aside>
-    <main id="main" class="workspace">
-      <div class="topbar">
-        <span>Visibility workspace</span>
+      <div class="header-actions">
         <div class="account">
           <span id="auth-status" class="account-status">Guest workspace</span>
           <details id="auth-panel">
-            <summary>Account</summary>
+            <summary><span class="avatar" aria-hidden="true">R</span><span class="account-label">Account</span><span class="chevron" aria-hidden="true">⌄</span></summary>
             <form id="auth-form" aria-label="Sign in or create an account">
+              <div class="auth-heading"><strong>Your workspace</strong><span>Sign in to sync across devices.</span></div>
               <label for="auth-email">Email</label>
-              <input id="auth-email" type="email" autocomplete="email" required />
+              <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required />
               <label for="auth-password">Password</label>
-              <input id="auth-password" type="password" autocomplete="current-password" minlength="8" required />
+              <input id="auth-password" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required />
               <div class="auth-actions">
                 <button id="auth-submit" type="submit">Sign in</button>
                 <button id="auth-mode" type="button" class="text-button">Create account</button>
@@ -56,148 +46,111 @@
           </details>
         </div>
         <div class="themes" role="group" aria-label="Color theme">
-          <button type="button" data-theme-choice="light" aria-pressed="true">
-            Light
-          </button>
-          <button type="button" data-theme-choice="dark" aria-pressed="false">
-            Dark
-          </button>
+          <button type="button" data-theme-choice="light" aria-pressed="true" aria-label="Use light theme"><span aria-hidden="true">☼</span><span class="theme-word">Light</span></button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false" aria-label="Use dark theme"><span aria-hidden="true">◐</span><span class="theme-word">Dark</span></button>
         </div>
       </div>
-      <section id="check" class="panel check" aria-labelledby="title">
-        <div class="hero">
-          <div class="hero-copy">
-            <p class="eyebrow">
-              <span aria-hidden="true"></span> X VISIBILITY CHECK
-            </p>
-            <h1 id="title">
-              See where your<br />
-              account shows up.
-            </h1>
-            <p>
-              Check what another viewer can find in X search and replies. Save a baseline and see what changes. Guest reports stay on this device; signing in syncs reports and watchlists to your account.
-            </p>
-            <form id="handle-form">
-              <label for="handle">Public X handle</label>
-              <div class="form-row">
-                <div class="input">
-                  <span aria-hidden="true">@</span
-                  ><input
-                    id="handle"
-                    placeholder="yourhandle"
-                    autocomplete="off"
-                    autocapitalize="none"
-                    maxlength="16"
-                    required
-                  />
-                </div>
-                <button type="submit">
-                  Start check <span aria-hidden="true">→</span>
-                </button>
-              </div>
-            </form>
-            <button id="demo" type="button" class="text-button">
-              Explore a sample report <span aria-hidden="true">→</span>
-            </button>
-          </div>
-          <div class="signal-map" aria-hidden="true">
-            <div class="map-grid"></div>
-            <div class="rings"></div>
-            <div class="map-core">◩</div>
-            <span class="map-label map-a"><i></i> Suggestions</span>
-            <span class="map-label map-b"><i></i> Post search</span>
-            <span class="map-label map-c"><i></i> Reply presence</span>
-            <span class="map-label map-d"><i></i> Reply placement</span>
-          </div>
-        </div>
-        <p id="notice" role="status" aria-live="polite"></p>
-        <div id="guided" class="guided" hidden>
-          <div class="panel-head">
-            <div>
-              <h2 id="guide-title">Guided observations</h2>
-              <p>
-                Use a separate viewer account and mark each surface you can
-                check.
-              </p>
+    </header>
+
+    <main id="main">
+      <section id="check" class="hero-section" aria-labelledby="title">
+        <div class="hero-grain" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span> X ACCOUNT VISIBILITY <span class="eyebrow-rule"></span> FIELD NOTES 01</p>
+          <h1 id="title">See what others<br /><span>can actually find.</span></h1>
+          <p class="hero-lede">A clear, repeatable way to check how your public account appears across search and conversations on X.</p>
+          <form id="handle-form" class="handle-form">
+            <label for="handle">Start with a public X handle</label>
+            <div class="form-row">
+              <div class="handle-input"><span aria-hidden="true">@</span><input id="handle" placeholder="yourhandle" autocomplete="off" autocapitalize="none" maxlength="16" required /></div>
+              <button type="submit" class="primary-button">Start a check <span aria-hidden="true"></span></button>
             </div>
-            <span id="progress" class="pill">0 of 4 recorded</span>
-          </div>
-          <form id="guided-form">
-            <div id="questions" class="signal-grid"></div>
-            <div class="actions">
-              <button type="submit">Save observations</button
-              ><button type="button" class="secondary" id="watch-add">
-                Add to watchlist
-              </button>
-            </div>
+            <span class="form-footnote"><span class="mini-lock" aria-hidden="true">◇</span> No X password or account connection needed</span>
           </form>
+          <div class="hero-links">
+            <button id="demo" type="button" class="sample-link"><span class="play-icon" aria-hidden="true">▷</span> Explore a sample report</button>
+            <span>·</span><a href="#method">How we measure <span aria-hidden="true"></span></a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Illustration of the four visibility surfaces Reachframe helps you check">
+          <div class="visual-topline"><span><i class="live-indicator"></i> A VIEWER'S PERSPECTIVE</span><span class="mono">X / PUBLIC SURFACES</span></div>
+          <div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div>
+          <div class="orbit-axis"></div>
+          <div class="orbit-core"><span class="core-mark"><i></i><b></b><em></em></span><small>YOUR<br />ACCOUNT</small></div>
+          <div class="surface-node node-one"><span class="node-line"></span><span class="node-index">01</span><span class="node-title">Suggestions</span><span class="node-state">CHECKABLE</span></div>
+          <div class="surface-node node-two"><span class="node-line"></span><span class="node-index">02</span><span class="node-title">Post search</span><span class="node-state">CHECKABLE</span></div>
+          <div class="surface-node node-three"><span class="node-line"></span><span class="node-index">03</span><span class="node-title">Reply presence</span><span class="node-state">CHECKABLE</span></div>
+          <div class="surface-node node-four"><span class="node-line"></span><span class="node-index">04</span><span class="node-title">Reply placement</span><span class="node-state">CHECKABLE</span></div>
+          <div class="visual-footer"><span>01—04</span><span>OBSERVE · RECORD · COMPARE</span><span class="mono">RF / 2026</span></div>
+          <span class="visual-coordinate coordinate-a" aria-hidden="true">41° 24' 12.2"</span><span class="visual-coordinate coordinate-b" aria-hidden="true">NO ASSUMPTIONS</span>
         </div>
       </section>
-      <section
-        id="report"
-        class="panel report"
-        aria-label="Visibility report"
-        hidden
-        tabindex="-1"
-      ></section>
-      <div class="dashboard">
-        <section id="monitor" class="panel dashboard-panel">
-          <div class="panel-head">
-            <h2>Watchlist</h2>
-            <span id="watch-count" class="pill">0 accounts</span>
-          </div>
-          <p id="monitor-mode">Loading workspace…</p>
-          <ul id="watch-list" class="activity"></ul>
-          <details id="monitor-details">
-            <summary>About automatic monitoring</summary>
-            <p>
-              Scheduled X API monitoring is not enabled. Guided checks save to your signed-in cloud workspace or, for guests, this browser.
-            </p>
-          </details>
-        </section>
-        <section id="history" class="panel dashboard-panel">
-          <div class="panel-head">
-            <h2>Scan history</h2>
-            <span id="scan-count" class="pill">0 scans</span>
-          </div>
-          <p>
-            Reopen a dated report or compare it with an earlier observation.
-          </p>
-          <label class="filter" for="history-filter" hidden
-            >Filter by account
-            <select id="history-filter"></select
-          ></label>
-          <ul id="history-list" class="activity"></ul>
-          <a
-            id="csv-export"
-            class="secondary action-link"
-            href="/reports/history.csv"
-            hidden
-            >Download full history CSV</a
-          >
-        </section>
-        <section id="activity" class="panel dashboard-panel changes">
-          <div class="panel-head">
-            <h2>Change alerts</h2>
-            <span id="change-count" class="pill">0 changes</span>
-          </div>
-          <p>
-            See measured changes between reports for the same account and
-            evidence source.
-          </p>
-          <ul id="changes" class="activity"></ul>
-        </section>
-      </div>
-      <section id="method" class="panel dashboard-panel method">
-        <h2>How checks work</h2>
-        <p>
-          Results reflect what a specific viewer could see at the time of the
-          check. Unmeasured surfaces stay out of the visibility score. For
-          official moderation information, review any notices in X.
-        </p>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <section id="guided" class="guided-section" hidden aria-labelledby="guide-title">
+        <div class="section-kicker"><span>LIVE WORKSPACE</span><span class="kicker-line"></span><span>01 / 03</span></div>
+        <div class="section-title-row">
+          <div><p class="eyebrow">GUIDED FIELD CHECK</p><h2 id="guide-title">Observations for this account</h2><p class="section-intro">Use a separate viewer account. If you cannot verify a surface, leave it unmeasured.</p></div>
+          <span id="progress" class="progress-chip">0 of 4 recorded</span>
+        </div>
+        <form id="guided-form">
+          <div id="questions" class="signal-grid"></div>
+          <div class="guided-actions"><div><span class="privacy-mark" aria-hidden="true">✳</span> Your report records observations, not an X enforcement decision.</div><div class="actions"><button type="button" class="secondary" id="watch-add"><span aria-hidden="true">＋</span> Add to watchlist</button><button type="submit" class="primary-button">Save observations <span aria-hidden="true"></span></button></div></div>
+        </form>
       </section>
-      <footer>
-        Reachframe <span>Independent visibility workspace for X</span>
+
+      <section id="report" class="report-section" aria-label="Visibility report" hidden tabindex="-1"></section>
+
+      <section class="workspace-section" aria-labelledby="workspace-heading">
+        <div class="section-kicker"><span>YOUR RECORD</span><span class="kicker-line"></span><span>02 / 03</span></div>
+        <div class="section-title-row section-title-wide">
+          <div><p class="eyebrow">PERSONAL WORKSPACE</p><h2 id="workspace-heading">Keep the signal<br class="desktop-break" /> in view.</h2></div>
+          <p class="section-intro">Build a useful history one verified observation at a time. Your workspace stays private to your browser or signed-in account.</p>
+        </div>
+        <div class="dashboard-grid">
+          <section id="monitor" class="data-panel watch-panel">
+            <div class="panel-top"><span class="panel-symbol" aria-hidden="true">◎</span><span class="panel-index">01 / WATCH</span><span id="watch-count" class="count-chip">0 accounts</span></div>
+            <div class="panel-heading"><div><p class="eyebrow">KEEP CLOSE</p><h3>Watchlist</h3></div><span class="panel-arrow" aria-hidden="true"></span></div>
+            <p id="monitor-mode" class="panel-copy">Loading workspace…</p>
+            <ul id="watch-list" class="activity-list"></ul>
+            <details id="monitor-details"><summary><span>About automatic monitoring</span><span aria-hidden="true">＋</span></summary><p>Scheduled X API monitoring is not enabled. Guided checks save to your signed-in cloud workspace or, for guests, this browser.</p></details>
+          </section>
+          <section id="history" class="data-panel history-panel">
+            <div class="panel-top"><span class="panel-symbol" aria-hidden="true"></span><span class="panel-index">02 / ARCHIVE</span><span id="scan-count" class="count-chip">0 scans</span></div>
+            <div class="panel-heading"><div><p class="eyebrow">MEASURE OVER TIME</p><h3>Scan history</h3></div><span class="panel-arrow" aria-hidden="true"></span></div>
+            <p class="panel-copy">Reopen a dated report or compare it with an earlier observation.</p>
+            <label class="filter" for="history-filter" hidden>Filter by account<select id="history-filter"></select></label>
+            <ul id="history-list" class="activity-list"></ul>
+            <a id="csv-export" class="secondary action-link" href="/reports/history.csv" hidden>Download full history CSV <span aria-hidden="true">↓</span></a>
+          </section>
+          <section id="activity" class="data-panel change-panel">
+            <div class="panel-top"><span class="panel-symbol" aria-hidden="true">⌁</span><span class="panel-index">03 / CHANGES</span><span id="change-count" class="count-chip">0 changes</span></div>
+            <div class="panel-heading"><div><p class="eyebrow">COMPARE THE RECORD</p><h3>Change log</h3></div><span class="panel-arrow" aria-hidden="true"></span></div>
+            <p class="panel-copy">Measured differences between reports for the same account and evidence source.</p>
+            <ul id="changes" class="activity-list"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section id="method" class="method-section" aria-labelledby="method-heading">
+        <div class="section-kicker"><span>THE METHOD</span><span class="kicker-line"></span><span>03 / 03</span></div>
+        <div class="method-layout">
+          <div class="method-heading"><p class="eyebrow">CLEAR BY DESIGN</p><h2 id="method-heading">Evidence first.<br /><span>Interpretation second.</span></h2><p>Visibility can change by viewer, query, and time. Reachframe keeps those conditions attached to the record.</p><a class="method-link" href="https://help.x.com/en/using-x/x-search" target="_blank" rel="noopener noreferrer">Review X search guidance <span aria-hidden="true"></span></a></div>
+          <div class="method-list">
+            <article><span class="method-number">01</span><div><h3>Account suggestions</h3><p>Search the exact public handle and inspect whether the account appears in suggestions.</p></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
+            <article><span class="method-number">02</span><div><h3>Post search</h3><p>Search the exact text of a recent public post from a separate viewer account.</p></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
+            <article><span class="method-number">03</span><div><h3>Reply presence</h3><p>Check a reply inside its parent conversation as another viewer.</p></div><span class="method-symbol" aria-hidden="true">↳</span></article>
+            <article><span class="method-number">04</span><div><h3>Reply placement</h3><p>Compare the default conversation with alternate or expanded reply views.</p></div><span class="method-symbol" aria-hidden="true">↕</span></article>
+          </div>
+        </div>
+        <div class="method-note"><span aria-hidden="true">i</span><p>Unmeasured surfaces stay out of the visibility score. A missing result can have several causes and does not prove an account restriction. Review notices and account status in X for official information.</p><a href="https://help.x.com/en/rules-and-policies/x-rules" target="_blank" rel="noopener noreferrer">X policies </a></div>
+      </section>
+
+      <footer class="site-footer">
+        <a href="#main" class="brand footer-brand"><span class="brand-mark" aria-hidden="true"><i></i><b></b><em></em></span><span>reachframe<span class="brand-period">.</span></span></a>
+        <span>An independent workspace for public X visibility checks.</span>
+        <a href="#main" class="back-top">BACK TO TOP <span aria-hidden="true">↑</span></a>
       </footer>
     </main>
   </body>
