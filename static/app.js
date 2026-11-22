@@ -667,7 +667,12 @@ async function refresh() {
         await refresh();
       }),
     );
-    item.append(recheck, remove);
+    const mentions = node("a", "Live mentions on X ↗", "action-link");
+    mentions.href = "https://x.com/search?q=" + encodeURIComponent("@" + entry.handle);
+    mentions.target = "_blank";
+    mentions.rel = "noopener noreferrer";
+    mentions.setAttribute("aria-label", "Open live X search for mentions of @" + entry.handle);
+    item.append(recheck, remove, mentions);
     if (state.live)
       item.append(
         node(
