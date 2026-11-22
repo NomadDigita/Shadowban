@@ -6,10 +6,14 @@ create table if not exists public.reachframe_scans (
   handle text not null check (handle = lower(handle) and handle ~ '^[a-z0-9_]{1,15}$'),
   evidence_source text not null default 'guided' check (evidence_source in ('guided')),
   checked_at timestamptz not null default now(),
-  results jsonb not null check (jsonb_typeof(results) = 'object'),
-  constraint reachframe_scans_result_keys check (
+  results jsonb not null check (
+    jsonb_typeof(results) = 'object' and
     results ? 'suggestions' and results ? 'search' and
-    results ? 'thread' and results ? 'placement'
+    results ? 'thread' and results ? 'placement' and
+    coalesce(results->'suggestions'->>'status', '') in ('visible','missing','unknown') and
+    coalesce(results->'search'->>'status', '') in ('visible','missing','unknown') and
+    coalesce(results->'thread'->>'status', '') in ('visible','missing','unknown') and
+    coalesce(results->'placement'->>'status', '') in ('visible','missing','unknown')
   )
 );
 
