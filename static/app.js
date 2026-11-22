@@ -94,6 +94,61 @@ function timestamp(value) {
 }
 
 const STORAGE_KEY = "reachframe-local-workspace-v1";
+const SUPABASE_CONFIG = window.REACHFRAME_SUPABASE || {};
+const cloudClient = window.supabase?.createClient && SUPABASE_CONFIG.url && SUPABASE_CONFIG.publishableKey
+  ? window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    })
+  : null;
+let authMode = "signin";
+
+async function migrateLocalWorkspace(user) {
+  const marker = "reachframe-cloud-import-v1-" + user.id;
+  if (localStorage.getItem(marker)) return;
+  const local = readWorkspace();
+  if (local.history.length) {
+    const rows = local.history.map((scan) => ({
+      user_id: user.id, handle: scan.handle, evidence_source: "guided",
+      checked_at: new Date(scan.checked * 1000).toISOString(), results: scan.results,
+    }));
+    const { error } = await cloudClient.from("reachframe_scans").insert(rows);
+    if (error) throw error;
+  }
+  if (local.watch.length) {
+    const rows = local.watch.map((entry) => ({ user_id: user.id, handle: entry.handle }));
+    const { error } = await cloudClient.from("reachframe_watchlist")
+      .upsert(rows, { onConflict: "user_id,handle", ignoreDuplicates: true });
+    if (error) throw error;
+  }
+  localStorage.setItem(marker, "done");
+}
+
+function updateAuthUI(user) {
+  const signedIn = Boolean(user);
+  $("#auth-status").textContent = signedIn ? user.email : "Guest workspace · saved on this device";
+  $("#auth-submit").hidden = signedIn;
+  $("#auth-mode").hidden = signedIn;
+  $("#auth-email").hidden = signedIn;
+  $("#auth-password").hidden = signedIn;
+  $("#auth-signout").hidden = !signedIn;
+  $("#auth-mode").textContent = authMode === "signin" ? "Create account" : "Have an account? Sign in";
+  $("#auth-submit").textContent = authMode === "signin" ? "Sign in" : "Create account";
+  $("#auth-form").setAttribute("aria-label", signedIn ? "Signed in account" : "Sign in or create an account");
+}
+
+async function getCurrentUser() {
+  if (!cloudClient) return null;
+  const { data, error } = await cloudClient.auth.getUser();
+  if (error && error.name !== "AuthSessionMissingError") throw error;
+  return data?.user || null;
+}
+
+async function migrateAndRefresh(user) {
+  if (user) await migrateLocalWorkspace(user);
+  updateAuthUI(user);
+  await refresh();
+}
+
 
 function readWorkspace() {
   try {
@@ -117,22 +172,70 @@ function writeWorkspace(value) {
 }
 
 async function api(route, data) {
-  const workspace = readWorkspace();
+  const { data: sessionData } = cloudClient
+    ? await cloudClient.auth.getSession()
+    : { data: { session: null } };
+  const user = sessionData.session?.user;
+
   if (route === "workspace") {
-    return { live: false, ...workspace };
+    if (!user) return { live: false, cloud: false, ...readWorkspace() };
+    const [scansResult, watchResult] = await Promise.all([
+      cloudClient.from("reachframe_scans")
+        .select("id,handle,evidence_source,checked_at,results")
+        .order("checked_at", { ascending: false }).limit(250),
+      cloudClient.from("reachframe_watchlist")
+        .select("handle,created_at").order("handle", { ascending: true }),
+    ]);
+    if (scansResult.error) throw scansResult.error;
+    if (watchResult.error) throw watchResult.error;
+    const history = (scansResult.data || []).map((row) => ({
+      id: row.id, handle: row.handle, source: row.evidence_source,
+      checked: Math.floor(Date.parse(row.checked_at) / 1000), results: row.results,
+    }));
+    const changes = [];
+    const previous = new Map();
+    for (const scan of [...history].reverse()) {
+      for (const [key] of fields) {
+        const current = scan.results[key]?.status;
+        if (!current || current === "unknown") continue;
+        const mapKey = scan.handle + ":" + key;
+        const before = previous.get(mapKey);
+        if (before && before !== current) {
+          changes.unshift({ handle: scan.handle, signal: key, before,
+            after: current, checked: scan.checked, source: scan.source });
+        }
+        previous.set(mapKey, current);
+      }
+    }
+    return { live: false, cloud: true, history, changes: changes.slice(0, 40),
+      watch: (watchResult.data || []).map((row) => ({ handle: row.handle, next_scan: null })) };
   }
+
   const handle = String(data?.handle || "").trim().replace(/^@/, "").toLowerCase();
   if (!/^[a-z0-9_]{1,15}$/.test(handle)) {
     throw new Error("Enter a valid X handle (1–15 letters, numbers or underscores).");
   }
+
+  if (user && route === "watch") {
+    const result = data.enabled === false
+      ? await cloudClient.from("reachframe_watchlist").delete()
+          .eq("user_id", user.id).eq("handle", handle)
+      : data.enabled === true
+        ? await cloudClient.from("reachframe_watchlist")
+            .upsert({ user_id: user.id, handle },
+              { onConflict: "user_id,handle", ignoreDuplicates: true })
+        : { error: new Error("Provide a watch state.") };
+    if (result.error) throw result.error;
+    return { ok: true };
+  }
+
+  const workspace = user ? null : readWorkspace();
   if (route === "watch") {
     const exists = workspace.watch.some((item) => item.handle === handle);
     if (data.enabled === false) {
       workspace.watch = workspace.watch.filter((item) => item.handle !== handle);
     } else if (data.enabled === true && !exists) {
-      if (workspace.watch.length >= 20) {
-        throw new Error("This browser can watch up to 20 handles.");
-      }
+      if (workspace.watch.length >= 20) throw new Error("This browser can watch up to 20 handles.");
       workspace.watch.push({ handle, next_scan: null });
       workspace.watch.sort((a, b) => a.handle.localeCompare(b.handle));
     } else if (data.enabled !== true) {
@@ -141,6 +244,7 @@ async function api(route, data) {
     writeWorkspace(workspace);
     return { ok: true };
   }
+
   if (route !== "manual") throw new Error("This workspace action is unavailable.");
   const values = data.results;
   if (!values || typeof values !== "object" ||
@@ -149,9 +253,18 @@ async function api(route, data) {
     throw new Error("Record at least one observation before saving.");
   }
   const results = Object.fromEntries(fields.map(([key]) => [
-    key,
-    { status: values[key], detail: "Recorded by you using the guided check." },
+    key, { status: values[key], detail: "Recorded by you using the guided check." },
   ]));
+
+  if (user) {
+    const { data: saved, error } = await cloudClient.from("reachframe_scans")
+      .insert({ user_id: user.id, handle, evidence_source: "guided", results })
+      .select("id,handle,evidence_source,checked_at,results").single();
+    if (error) throw error;
+    return { id: saved.id, handle: saved.handle, source: saved.evidence_source,
+      checked: Math.floor(Date.parse(saved.checked_at) / 1000), results: saved.results };
+  }
+
   const scan = { id: Date.now(), handle, source: "guided", checked: Math.floor(Date.now() / 1000), results };
   for (const [key] of fields) {
     const current = results[key].status;
@@ -160,10 +273,8 @@ async function api(route, data) {
       entry.handle === handle && entry.source === "guided" &&
       entry.results[key].status !== "unknown");
     if (previous && previous.results[key].status !== current) {
-      workspace.changes.unshift({
-        handle, signal: key, before: previous.results[key].status,
-        after: current, checked: scan.checked, source: "guided",
-      });
+      workspace.changes.unshift({ handle, signal: key, before: previous.results[key].status,
+        after: current, checked: scan.checked, source: "guided" });
     }
   }
   workspace.history.unshift(scan);
@@ -172,7 +283,6 @@ async function api(route, data) {
   writeWorkspace(workspace);
   return scan;
 }
-
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -233,7 +343,7 @@ function downloadHistoryCsv() {
   const headers = ["report_id", "handle", "captured_at_utc", "evidence_source",
     "total_surfaces", "measured_surfaces", "visible_surfaces", "unmeasured_surfaces", "visibility_percent",
     ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence"]), "limitations"];
-  const rows = readWorkspace().history.map((scan) => {
+  const rows = (state?.history || readWorkspace().history).map((scan) => {
     const report = reportData(scan);
     const c = report.coverage;
     return [
@@ -514,8 +624,9 @@ async function refresh() {
     event.preventDefault();
     downloadFile("reachframe-history.csv", "text/csv;charset=utf-8", downloadHistoryCsv());
   };
-  $("#monitor-mode").textContent =
-    "Saved checks, watchlist and change alerts stay in this browser on this device. Run another guided check to compare results.";
+  $("#monitor-mode").textContent = state.cloud
+    ? "Signed-in workspace. Guided reports and watchlist sync to your account across devices."
+    : "Guest workspace. Saved checks and watchlist stay in this browser on this device. Sign in to sync them across devices.";
   emptyList("#watch-list", "No accounts watched yet.");
   emptyList("#changes", "No measured changes yet.");
   $("#watch-count").textContent = countLabel(state.watch.length, "account");
@@ -700,5 +811,56 @@ document.addEventListener("DOMContentLoaded", () => {
     void work(event.currentTarget, () => addToWatchlist(handle));
   });
   $("#demo").addEventListener("click", () => showSample("mixed"));
-  void refresh().catch((error) => notice(error.message));
+
+  if (!cloudClient) {
+    $("#auth-status").textContent = "Cloud sync unavailable";
+    $("#auth-submit").disabled = true;
+    $("#auth-mode").disabled = true;
+    notice("Cloud sign-in is not configured. Guest workspace remains available.");
+  } else {
+    let authSync = Promise.resolve();
+    const scheduleAuthRefresh = (user) => {
+      authSync = authSync.then(() => migrateAndRefresh(user))
+        .catch((error) => notice("Cloud sync: " + error.message));
+    };
+    void getCurrentUser().then(scheduleAuthRefresh)
+      .catch((error) => notice("Cloud connection: " + error.message));
+    cloudClient.auth.onAuthStateChange((_event, session) => {
+      queueMicrotask(() => scheduleAuthRefresh(session?.user || null));
+    });
+    $("#auth-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const email = $("#auth-email").value.trim();
+      const password = $("#auth-password").value;
+      const submit = $("#auth-submit");
+      submit.disabled = true;
+      try {
+        const result = authMode === "signin"
+          ? await cloudClient.auth.signInWithPassword({ email, password })
+          : await cloudClient.auth.signUp({ email, password });
+        if (result.error) throw result.error;
+        if (authMode === "signup" && !result.data.session) {
+          notice("Check your email to confirm your account, then sign in.");
+        } else {
+          notice(authMode === "signin"
+            ? "Signed in. Your workspace is syncing."
+            : "Account created. Your workspace is syncing.");
+          $("#auth-panel").open = false;
+        }
+      } catch (error) {
+        notice(error.message || "Could not complete sign-in.");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    $("#auth-mode").addEventListener("click", () => {
+      authMode = authMode === "signin" ? "signup" : "signin";
+      updateAuthUI(null);
+    });
+    $("#auth-signout").addEventListener("click", async () => {
+      const { error } = await cloudClient.auth.signOut();
+      if (error) notice(error.message);
+      else notice("Signed out. Your local guest workspace is still available.");
+    });
+  }
 });
