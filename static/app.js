@@ -153,10 +153,17 @@ async function migrateAndRefresh(user) {
   if (currentOwnerId !== nextOwnerId) {
     $("#report").replaceChildren();
     $("#report").hidden = true;
+    $("#auth-password").value = "";
     currentOwnerId = nextOwnerId;
   }
-  if (user) await migrateLocalWorkspace(user);
   updateAuthUI(user);
+  if (user) {
+    try {
+      await migrateLocalWorkspace(user);
+    } catch (error) {
+      notice("Signed in, but guest data import needs another try: " + error.message);
+    }
+  }
   await refresh();
 }
 
@@ -850,6 +857,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ? await cloudClient.auth.signInWithPassword({ email, password })
           : await cloudClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
         if (result.error) throw result.error;
+        $("#auth-password").value = "";
         if (authMode === "signup" && !result.data.session) {
           notice("Check your email to confirm your account, then sign in.");
         } else {
