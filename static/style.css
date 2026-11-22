@@ -77,9 +77,10 @@ button { color: inherit; }
 .primary-nav a:hover,.primary-nav a[aria-current="location"] { color: var(--ink); background: var(--surface-2); }
 .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .nav-icon { font-size: 1.05rem; color: var(--faint); }
-.header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 13px; }
-.account { position: relative; display: flex; align-items: center; gap: 10px; }
-.account-status { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .77rem; white-space: nowrap; }
+.header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 13px; min-width: 0; }
+.account { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.account-status { display: block; flex: 0 1 auto; min-width: 0; max-width: min(17vw,190px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: .77rem; }
+.account-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #a2a89e; vertical-align: 1px; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #a2a89e; }
 .account details { position: relative; margin: 0; font-size: .84rem; }
 .account summary { display: flex; align-items: center; gap: 8px; padding: 4px 7px 4px 4px; color: var(--ink); list-style: none; cursor: pointer; border: 1px solid transparent; border-radius: 9px; }
