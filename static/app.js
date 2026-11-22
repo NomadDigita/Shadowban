@@ -837,7 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const result = authMode === "signin"
           ? await cloudClient.auth.signInWithPassword({ email, password })
-          : await cloudClient.auth.signUp({ email, password });
+          : await cloudClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
         if (result.error) throw result.error;
         if (authMode === "signup" && !result.data.session) {
           notice("Check your email to confirm your account, then sign in.");
