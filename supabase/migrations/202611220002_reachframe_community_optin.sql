@@ -85,6 +85,7 @@ begin
       and s.checked_at >= now() - interval '30 days'
       and s.evidence_source = 'guided'
     group by field.surface
+    having count(distinct s.user_id) >= 5
   ) as summary;
 
   select coalesce(jsonb_agg(to_jsonb(board)), '[]'::jsonb)
