@@ -109,9 +109,12 @@ async function migrateLocalWorkspace(user) {
   if (local.history.length) {
     const rows = local.history.map((scan) => ({
       user_id: user.id, handle: scan.handle, evidence_source: "guided",
+      client_key: "browser:" + String(scan.id),
       checked_at: new Date(scan.checked * 1000).toISOString(), results: scan.results,
     }));
-    const { error } = await cloudClient.from("reachframe_scans").insert(rows);
+    const { error } = await cloudClient.from("reachframe_scans").upsert(rows, {
+      onConflict: "user_id,client_key", ignoreDuplicates: true,
+    });
     if (error) throw error;
   }
   if (local.watch.length) {
@@ -143,7 +146,15 @@ async function getCurrentUser() {
   return data?.user || null;
 }
 
+let currentOwnerId = null;
+
 async function migrateAndRefresh(user) {
+  const nextOwnerId = user?.id || null;
+  if (currentOwnerId !== nextOwnerId) {
+    $("#report").replaceChildren();
+    $("#report").hidden = true;
+    currentOwnerId = nextOwnerId;
+  }
   if (user) await migrateLocalWorkspace(user);
   updateAuthUI(user);
   await refresh();
@@ -179,16 +190,21 @@ async function api(route, data) {
 
   if (route === "workspace") {
     if (!user) return { live: false, cloud: false, ...readWorkspace() };
-    const [scansResult, watchResult] = await Promise.all([
-      cloudClient.from("reachframe_scans")
+    const watchPromise = cloudClient.from("reachframe_watchlist")
+      .select("handle,created_at").order("handle", { ascending: true });
+    const scanRows = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await cloudClient.from("reachframe_scans")
         .select("id,handle,evidence_source,checked_at,results")
-        .order("checked_at", { ascending: false }).limit(250),
-      cloudClient.from("reachframe_watchlist")
-        .select("handle,created_at").order("handle", { ascending: true }),
-    ]);
-    if (scansResult.error) throw scansResult.error;
-    if (watchResult.error) throw watchResult.error;
-    const history = (scansResult.data || []).map((row) => ({
+        .order("checked_at", { ascending: false }).order("id", { ascending: false })
+        .range(offset, offset + 999);
+      if (error) throw error;
+      scanRows.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    const { data: watchRows, error: watchError } = await watchPromise;
+    if (watchError) throw watchError;
+    const history = scanRows.map((row) => ({
       id: row.id, handle: row.handle, source: row.evidence_source,
       checked: Math.floor(Date.parse(row.checked_at) / 1000), results: row.results,
     }));
@@ -208,7 +224,7 @@ async function api(route, data) {
       }
     }
     return { live: false, cloud: true, history, changes: changes.slice(0, 40),
-      watch: (watchResult.data || []).map((row) => ({ handle: row.handle, next_scan: null })) };
+      watch: (watchRows || []).map((row) => ({ handle: row.handle, next_scan: null })) };
   }
 
   const handle = String(data?.handle || "").trim().replace(/^@/, "").toLowerCase();
@@ -524,35 +540,29 @@ function report(scan, { focus = true } = {}) {
 }
 
 function priorComparison(scan) {
-  const prior = state?.history.find(
-    (entry) =>
-      entry.id < scan.id &&
-      entry.handle === scan.handle &&
-      entry.source === scan.source,
+  const history = state?.history || [];
+  const scanIndex = history.findIndex((entry) => entry.id === scan.id);
+  const older = scanIndex >= 0
+    ? history.slice(scanIndex + 1)
+    : history.filter((entry) => entry.checked < scan.checked)
+        .sort((a, b) => b.checked - a.checked);
+  const prior = older.find((entry) =>
+    entry.handle === scan.handle && entry.source === scan.source,
   );
   if (!prior) return null;
 
   const comparison = node("details", null, "comparison");
-  comparison.append(
-    node("summary", "Compare with " + timestamp(prior.checked)),
-  );
+  comparison.append(node("summary", "Compare with " + timestamp(prior.checked)));
   const list = node("ul", null, "activity");
   for (const [key, label] of fields) {
     const before = observationLabel(key, prior.results[key].status);
     const after = observationLabel(key, scan.results[key].status);
-    list.append(
-      node(
-        "li",
-        label +
-          " · " +
-          (before === after ? after + " (unchanged)" : before + " → " + after),
-      ),
-    );
+    list.append(node("li", label + " · " +
+      (before === after ? after + " (unchanged)" : before + " → " + after)));
   }
   comparison.append(list);
   return comparison;
 }
-
 function countLabel(count, singular, plural = singular + "s") {
   return count + " " + (count === 1 ? singular : plural);
 }
@@ -817,6 +827,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#auth-submit").disabled = true;
     $("#auth-mode").disabled = true;
     notice("Cloud sign-in is not configured. Guest workspace remains available.");
+    void refresh().catch((error) => notice(error.message));
   } else {
     let authSync = Promise.resolve();
     const scheduleAuthRefresh = (user) => {
