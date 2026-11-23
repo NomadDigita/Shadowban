@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" defer></script>
     <script src="/config.js" defer></script>
     <script src="/app.js" defer></script>
+    <script src="/community.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -131,6 +132,35 @@
             <ul id="changes" class="activity-list"></ul>
           </section>
         </div>
+        <section id="community" class="community-panel" aria-labelledby="community-heading">
+          <div class="panel-top"><span class="panel-symbol" aria-hidden="true">✳</span><span class="panel-index">COMMUNITY / LIVE</span><span class="count-chip">Opt-in data only</span></div>
+          <div class="panel-heading"><div><p class="eyebrow">FIRST-PARTY SIGNAL</p><h3 id="community-heading">Community pulse</h3></div></div>
+          <p class="panel-copy">A live snapshot from members who choose to share guided observations. Account handles and individual reports stay private.</p>
+          <div class="community-metrics">
+            <div><strong id="community-contributors">—</strong><span>contributors · 30 days</span></div>
+            <div><strong id="community-reports">—</strong><span>shared reports · 30 days</span></div>
+          </div>
+          <div class="community-columns">
+            <section aria-labelledby="community-surfaces-heading">
+              <h4 id="community-surfaces-heading">Observed surfaces</h4>
+              <ul id="community-surfaces" class="community-list"><li class="community-empty">Loading current community data…</li></ul>
+            </section>
+            <section aria-labelledby="community-board-heading">
+              <h4 id="community-board-heading">Contributor board</h4>
+              <p class="community-caption">Ranks shared report activity, never account visibility.</p>
+              <ul id="community-board" class="community-list"><li class="community-empty">Loading current contributor data…</li></ul>
+            </section>
+          </div>
+          <div class="community-controls">
+            <label class="community-check"><input id="community-share" type="checkbox" disabled /><span><strong>Share my guided observations anonymously</strong><small>Only aggregate counts are used. Tracked handles are never published. Turn this off any time.</small></span></label>
+            <label class="community-check"><input id="community-board-optin" type="checkbox" disabled /><span><strong>Show me on the contributor board</strong><small>Requires a public alias. Your X handle is never shown.</small></span></label>
+            <label class="community-alias-label" for="community-alias">Public alias</label>
+            <input id="community-alias" class="community-alias" type="text" maxlength="32" placeholder="Choose a pseudonym" disabled />
+            <div class="community-actions"><button id="community-save" class="secondary" type="button" disabled>Save sharing choices</button><button id="community-alerts" class="secondary" type="button">Enable browser alerts</button></div>
+            <p id="community-status" class="community-status" role="status">Loading your sharing settings…</p>
+            <p class="community-caption">Community data refreshes every minute and appears after at least five contributors have shared in the last 30 days. Alerts run only in this open browser tab. They are not a substitute for X notices.</p>
+          </div>
+        </section>
       </section>
 
       <section id="method" class="method-section" aria-labelledby="method-heading">

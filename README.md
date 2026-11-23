@@ -24,9 +24,17 @@ Open a saved report and choose Download JSON or Print report. Choose Download fu
 
 Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
 
-## Automatic monitoring
+## Community data and alerts
 
-Scheduled X API monitoring is not enabled. It requires server-side X API credentials, a durable job runner and additional service design. No X credentials are stored in this repository or browser. Guided checks work without provider credentials.
+The community pulse is built only from signed-in members who explicitly opt in. It aggregates guided observations over 30 days, hides the sample until at least five contributors participate, and never publishes tracked X handles. The optional contributor board shows a pseudonym and report count only. Members can turn sharing off in the workspace. Browser alerts are delivered only while the Reachframe tab is open.
+
+The watchlist links to X's own live search for public mentions. Reachframe does not scrape X pages or claim to reproduce a complete mentions timeline.
+
+## X API access
+
+Automated API checks are intentionally not enabled. X's current Developer Policy says not to use the API to measure or analyze spam/security on X, and prohibits products that do this without X's express written permission. The Developer Agreement also says use of X API content for a service must be explicitly approved. A Reachframe API integration would therefore require written approval from X for the exact visibility-check and monitoring use case before it can be activated. X's pay-per-use page currently lists $0.005 per post read and $0.010 per user read. No X API token or paid credits are configured here.
+
+Sources: [X Developer Policy](https://docs.x.com/developer-terms/policy) · [X Developer Agreement](https://docs.x.com/developer-terms/agreement) · [X API pricing](https://developer.x.com/).
 
 The Python service files are a retained prototype backend and are not used by the static Vercel deployment.
 
