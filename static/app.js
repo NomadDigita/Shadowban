@@ -312,6 +312,48 @@ function escapeHtml(value) {
   })[character]);
 }
 
+const followUpInstructions = {
+  suggestions: "Search the exact public handle from a separate viewer account. Record the query, viewer context, and time, then repeat once before treating the result as a pattern.",
+  search: "Choose a recent original public post and search a distinctive exact phrase from a separate viewer account. Record the phrase and time; repeat with another recent post if the first is absent.",
+  thread: "Open the reply’s parent conversation from a separate viewer account. Check the full thread and any expanded replies after the conversation has loaded, then repeat with another reply.",
+  placement: "Compare the reply in the default conversation and in the available expanded or alternate reply view. Record both views and repeat with another conversation.",
+};
+
+function buildActionPlan(scan) {
+  const items = [];
+  for (const [key, label] of fields) {
+    const status = scan.results[key]?.status || "unknown";
+    if (status === "missing") {
+      items.push({
+        priority: "Repeat observation",
+        surface: label,
+        instruction: followUpInstructions[key],
+      });
+    } else if (status === "unknown") {
+      items.push({
+        priority: "Complete coverage",
+        surface: label,
+        instruction: "Leave this surface unmeasured until you can verify it directly. " + followUpInstructions[key],
+      });
+    }
+  }
+  if (items.some((item) => item.priority === "Repeat observation")) {
+    items.push({
+      priority: "Check official notices",
+      surface: "X account status",
+      instruction: "Review notices and Account Status in X for official information. These observations cannot identify an internal cause or confirm an enforcement decision.",
+    });
+  }
+  const summary = !items.length
+    ? "All four surfaces were marked visible in this snapshot. Save a later check if you want to compare changes."
+    : items.some((item) => item.priority === "Repeat observation")
+      ? "Repeat each missing observation with the same method before drawing conclusions. Differences can depend on viewer, query, and time."
+      : items.length === fields.length
+        ? "No surface was measured in this report. Record observations only when you can verify them directly."
+        : "Complete the unmeasured checks when you can verify them. Unmeasured surfaces are excluded from the visibility percentage.";
+  return { summary, items };
+}
+
 function downloadFile(name, type, content) {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const link = document.createElement("a");
@@ -340,6 +382,7 @@ function reportData(scan) {
       unmeasured_surfaces: fields.length - measured,
       visibility_percent: measured ? Math.round(100 * visible / measured) : null,
     },
+    action_plan: buildActionPlan(scan),
     observations: fields.map(([key, label]) => ({
       surface: key,
       label,
@@ -385,6 +428,9 @@ function openPrintReport(scan) {
     `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong><p>${escapeHtml(item.evidence)}</p></article>`
   ).join("");
   const limits = data.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const actionSteps = data.action_plan.items.map((item) =>
+    `<li><strong>${escapeHtml(item.priority)} · ${escapeHtml(item.surface)}:</strong> ${escapeHtml(item.instruction)}</li>`
+  ).join("");
   const measured = data.coverage.measured_surfaces;
   const score = data.coverage.visibility_percent === null ? "Unmeasured" :
     data.coverage.visibility_percent + "% · " + data.coverage.visible_surfaces + " of " + measured + " measured surfaces visible";
@@ -397,10 +443,10 @@ function openPrintReport(scan) {
     body{font:16px/1.55 system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 22px;color:#202333;background:#fff}
     h1{font-size:2rem;margin-bottom:4px}header p{color:#5e6272;margin-top:0}.score{font-size:1.5rem;font-weight:700;padding:14px 0}
     article{border:1px solid #dfe2eb;border-radius:12px;padding:16px;margin:12px 0;break-inside:avoid}
-    article h2{font-size:1.1rem;margin:0 0 6px}article p{margin:8px 0 0}.limits{color:#545969;font-size:.9rem}
+    article h2{font-size:1.1rem;margin:0 0 6px}article p{margin:8px 0 0}.limits,.plan{color:#545969;font-size:.9rem}.plan li{margin:8px 0}
     button{padding:10px 14px;border:0;border-radius:8px;background:#29314d;color:white;font:inherit;cursor:pointer}
     @media print{body{margin:0 auto}.no-print{display:none}}
-  </style><body><button class="no-print" onclick="window.print()">Print / Save PDF</button><header><h1>Visibility report · @${escapeHtml(data.handle)}</h1><p>${escapeHtml(data.evidence_source.label)} · ${escapeHtml(new Date(scan.checked*1000).toLocaleString())}</p></header><div class="score">${escapeHtml(score)}</div><p>${measured} of 4 surfaces measured. Observations reflect one viewer at one point in time.</p>${rows}<h2>Limitations</h2><ul class="limits">${limits}</ul></body></html>`);
+  </style><body><button class="no-print" onclick="window.print()">Print / Save PDF</button><header><h1>Visibility report · @${escapeHtml(data.handle)}</h1><p>${escapeHtml(data.evidence_source.label)} · ${escapeHtml(new Date(scan.checked*1000).toLocaleString())}</p></header><div class="score">${escapeHtml(score)}</div><p>${measured} of 4 surfaces measured. Observations reflect one viewer at one point in time.</p>${rows}<h2>Recommended next steps</h2><p>${escapeHtml(data.action_plan.summary)}</p><ol class="plan">${actionSteps}</ol><h2>Limitations</h2><ul class="limits">${limits}</ul></body></html>`);
   popup.document.close();
 }
 
@@ -467,6 +513,23 @@ function report(scan, { focus = true } = {}) {
     );
     grid.append(card);
   }
+  const planData = buildActionPlan(scan);
+  const plan = node("section", null, "action-plan");
+  plan.setAttribute("aria-labelledby", "action-plan-heading");
+  const planHeading = node("h3", "Recommended next steps");
+  planHeading.id = "action-plan-heading";
+  plan.append(planHeading, node("p", planData.summary, "action-plan-intro"));
+  const planList = node("ol", null, "action-plan-list");
+  for (const item of planData.items) {
+    const entry = node("li", null, "action-plan-step");
+    const priority = node("span", item.priority, "action-priority");
+    const detail = node("div", null, "action-plan-detail");
+    detail.append(node("strong", item.surface), node("p", item.instruction));
+    entry.append(priority, detail);
+    planList.append(entry);
+  }
+  plan.append(planList);
+
   const advice = node("div", null, "advice");
   advice.append(
     node("h3", "Next step"),
@@ -479,7 +542,7 @@ function report(scan, { focus = true } = {}) {
           : "Save another check if visibility changes. Search and conversation results can differ by viewer.",
     ),
   );
-  panel.replaceChildren(head, coverage, grid, advice);
+  panel.replaceChildren(head, coverage, grid, plan, advice);
   if (scan.source === "sample") {
     const samples = node("div", null, "actions");
     samples.setAttribute("role", "group");

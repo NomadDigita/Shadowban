@@ -22,6 +22,39 @@ SOURCE_LIMITS = {
     "api": "X API monitoring samples post search only and depends on operator credentials and budget.",
 }
 OUTCOMES = {"visible": "Visible", "missing": "Missing from view", "unknown": "Unmeasured"}
+FOLLOW_UP = {
+    "suggestions": "Search the exact public handle from a separate viewer account. Record the query, viewer context, and time, then repeat once before treating the result as a pattern.",
+    "search": "Choose a recent original public post and search a distinctive exact phrase from a separate viewer account. Record the phrase and time; repeat with another recent post if the first is absent.",
+    "thread": "Open the reply’s parent conversation from a separate viewer account. Check the full thread and any expanded replies after the conversation has loaded, then repeat with another reply.",
+    "placement": "Compare the reply in the default conversation and in the available expanded or alternate reply view. Record both views and repeat with another conversation.",
+}
+
+
+def action_plan(results):
+    items = []
+    for key, label in SURFACES.items():
+        status = results.get(key, {}).get("status", "unknown")
+        if status == "missing":
+            items.append({"priority": "Repeat observation", "surface": label, "instruction": FOLLOW_UP[key]})
+        elif status == "unknown":
+            items.append({
+                "priority": "Complete coverage", "surface": label,
+                "instruction": "Leave this surface unmeasured until you can verify it directly. " + FOLLOW_UP[key],
+            })
+    if any(item["priority"] == "Repeat observation" for item in items):
+        items.append({
+            "priority": "Check official notices", "surface": "X account status",
+            "instruction": "Review notices and Account Status in X for official information. These observations cannot identify an internal cause or confirm an enforcement decision.",
+        })
+    if not items:
+        summary = "All four surfaces were marked visible in this snapshot. Save a later check if you want to compare changes."
+    elif any(item["priority"] == "Repeat observation" for item in items):
+        summary = "Repeat each missing observation with the same method before drawing conclusions. Differences can depend on viewer, query, and time."
+    elif len(items) == len(SURFACES):
+        summary = "No surface was measured in this report. Record observations only when you can verify them directly."
+    else:
+        summary = "Complete the unmeasured checks when you can verify them. Unmeasured surfaces are excluded from the visibility percentage."
+    return {"summary": summary, "items": items}
 
 
 def report_data(row):
@@ -44,6 +77,7 @@ def report_data(row):
             "unmeasured_surfaces": len(SURFACES) - measured,
             "visibility_percent": round(100 * visible / measured) if measured else None,
         },
+        "action_plan": action_plan(results),
         "observations": [
             {
                 "surface": key,
@@ -105,6 +139,11 @@ def print_html(report, template):
         for item in report["observations"]
     )
     limitations = "".join(f"<li>{escape(limit)}</li>" for limit in report["limitations"])
+    action_plan = report["action_plan"]
+    action_steps = "".join(
+        f'<li><strong>{escape(item["priority"])} · {escape(item["surface"])}:</strong> {escape(item["instruction"])}</li>'
+        for item in action_plan["items"]
+    )
     return template.substitute(
         handle=escape(report["handle"]),
         timestamp=escape(report["captured_at_utc"]),
@@ -117,5 +156,6 @@ def print_html(report, template):
             if score is not None else "Unmeasured"
         ),
         observations=observations,
+        action_plan=f'<p>{escape(action_plan["summary"])}</p><ol class="action-plan-list">{action_steps}</ol>',
         limitations=limitations,
     ).encode("utf-8")
