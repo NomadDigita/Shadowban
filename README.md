@@ -18,6 +18,10 @@ The browser uses a Supabase publishable key in `static/config.js`. Publishable k
 
 Email confirmation behavior follows the Supabase Auth project settings. For production signup, configure the project’s Site URL and allowed redirect URLs for the deployed Reachframe origin. Public email delivery may also require a custom SMTP provider.
 
+## Evidence-based action plans
+
+Every saved report includes suggested follow-up steps derived only from the recorded outcomes. Missing observations recommend repeating the same method with a separate viewer and checking official X account notices; unmeasured surfaces stay outside the percentage. The plan never claims to know why X changed visibility or whether an account was restricted. The same steps appear in JSON and print/PDF reports.
+
 ## Reports and exports
 
 Open a saved report and choose Download JSON or Print report. Choose Download full history CSV in Scan history to export saved reports. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.

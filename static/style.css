@@ -185,6 +185,14 @@ button { color: inherit; }
 .badge { display: inline-flex; padding: 3px 8px; margin: 0 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font: 500 .62rem var(--mono); }
 .badge.visible { background: var(--good-bg); color: var(--good); }.badge.missing { background: var(--warn-bg); color: var(--warn); }
 .advice,.comparison { margin-top: 15px; padding: 15px; border-radius: 9px; background: var(--surface-2); }
+.action-plan { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.action-plan h3 { margin: 0; font-size: 1rem; letter-spacing: -.02em; }
+.action-plan-intro { margin: 6px 0 14px; color: var(--muted); font-size: .85rem; }
+.action-plan-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; counter-reset: action-step; }
+.action-plan-step { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 12px; align-items: start; padding: 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); counter-increment: action-step; }
+.action-plan-detail strong { display: block; font-size: .84rem; }
+.action-plan-detail p { margin: 4px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.55; }
+.action-priority { padding: 4px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font: 600 .62rem/1.4 var(--mono); white-space: nowrap; }
 .advice h3 { font-size: .85rem; }.advice p { margin-top: 3px; color: var(--muted); font-size: .83rem; }
 .comparison summary { color: var(--accent); cursor: pointer; font-weight: 650; font-size: .83rem; }
 .report-exports { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
@@ -318,6 +326,8 @@ button { color: inherit; }
   .guided-actions .actions > button { flex: 1; }
   .data-panel { padding: 17px; }
   .report-section { margin-inline: 12px; padding: 16px; }
+  .action-plan { padding: 14px; }
+  .action-plan-step { grid-template-columns: 1fr; gap: 7px; }
   .summary { align-items: flex-start; }
   .score { flex-basis: 54px; height: 54px; font-size: 1rem; }
   .method-heading h2 { font-size: 2.65rem; }
