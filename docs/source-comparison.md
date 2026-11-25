@@ -16,7 +16,7 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 | --- | --- | --- |
 | Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context. | Workflow aligned; no automatic X inspection |
 | Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. | Strong workflow parity; source confidence and independent provider evidence absent |
-| Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, and share privacy handling. | Core account history parity; no recurring data collection |
+| Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, share privacy handling, and device-only manual recheck reminders. | Core account history parity; reminder prompts do not collect data or run scans |
 | Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
 | Community | Opt-in aggregate observations and an opt-in alias-based contributor activity board, gated by minimum participation. | First-party aggregate signal, not an X-account leaderboard |
 | Education | Four quick guides plus ten FAQ answers covering checks, uncertainty, data, privacy, and next steps. | Disclosed workflow and help coverage expanded; no localized content library yet |
