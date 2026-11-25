@@ -8,7 +8,7 @@ Enter a public X handle and start a guided check. Follow the links and record th
 
 Choose Light or Dark to set the browser theme. The fictional sample offers scenarios that do not save data. Saved reports can be filtered by account and compared with earlier observations.
 
-Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. Unmeasured observations do not replace the last measured result in comparisons.
+Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. Unmeasured observations do not replace the last measured result in comparisons. Set an optional daily, three-day, weekly, or two-week reminder for a manual recheck. Reminder schedules are stored in this browser and are evaluated only while Reachframe is open; they do not run scans or send email or Telegram alerts.
 
 ## Accounts and saved data
 

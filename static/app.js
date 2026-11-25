@@ -752,6 +752,107 @@ function countLabel(count, singular, plural = singular + "s") {
   return count + " " + (count === 1 ? singular : plural);
 }
 
+const REMINDER_STORAGE_KEY = "reachframe-manual-reminders-v1";
+
+function reminderSettings() {
+  try {
+    const value = JSON.parse(localStorage.getItem(REMINDER_STORAGE_KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function storeReminderSettings(settings) {
+  try {
+    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(settings));
+    return true;
+  } catch {
+    notice("This browser could not save reminder settings.");
+    return false;
+  }
+}
+
+function lastSavedCheck(handle) {
+  return Math.max(0, ...(state?.history || [])
+    .filter((scan) => scan.handle === handle && scan.source !== "sample")
+    .map((scan) => Number(scan.checked) || 0));
+}
+
+function reminderTiming(handle, setting) {
+  const lastCheck = lastSavedCheck(handle) * 1000;
+  const base = Math.max(Number(setting?.since) || 0, lastCheck);
+  const days = Number(setting?.days) || 0;
+  return { base, dueAt: base + days * 86400000, lastCheck };
+}
+
+function updateReminderLabels() {
+  if (!state) return;
+  const settings = reminderSettings();
+  for (const entry of state.watch) {
+    const row = [...$("#watch-list").children].find((item) => item.dataset.watchHandle === entry.handle);
+    const status = row?.querySelector(".watch-reminder-status");
+    const setting = settings[entry.handle];
+    if (!status) continue;
+    if (!setting?.days) {
+      status.textContent = "Manual reminders are off. No automatic checks run.";
+      status.removeAttribute("data-due");
+      continue;
+    }
+    const { base, dueAt, lastCheck } = reminderTiming(entry.handle, setting);
+    if (Date.now() >= dueAt) {
+      const since = Number(setting.since) || 0;
+      const lastLabel = lastCheck && lastCheck >= since
+        ? timestamp(Math.floor(lastCheck / 1000))
+        : "no check recorded since this reminder was set";
+      status.textContent = "Manual check due · " + lastLabel;
+      status.dataset.due = "true";
+    } else {
+      status.textContent = "Next manual reminder " + timestamp(Math.floor(dueAt / 1000)) +
+        " · this device only";
+      status.removeAttribute("data-due");
+    }
+  }
+}
+
+function checkDueReminders() {
+  if (!state || document.visibilityState !== "visible") return;
+  const settings = reminderSettings();
+  let changed = false;
+  for (const entry of state.watch) {
+    const setting = settings[entry.handle];
+    if (!setting?.days) continue;
+    const { base, dueAt } = reminderTiming(entry.handle, setting);
+    const key = String(base);
+    if (Date.now() < dueAt || setting.notifiedFor === key) continue;
+    if (localStorage.getItem("reachframe-browser-alerts") !== "on" ||
+        !("Notification" in window) || Notification.permission !== "granted") continue;
+    try {
+      new Notification("Manual Reachframe check due", {
+        body: "Open Reachframe to repeat or start a manual visibility check for @" + entry.handle + ".",
+        tag: "reachframe-reminder-" + entry.handle,
+      });
+      setting.notifiedFor = key;
+      changed = true;
+    } catch {
+      // Keep the reminder due so it can be retried after browser alerts are available.
+    }
+  }
+  if (changed) storeReminderSettings(settings);
+  updateReminderLabels();
+}
+
+function setReminder(handle, days) {
+  const settings = reminderSettings();
+  if (!days) {
+    delete settings[handle];
+  } else {
+    settings[handle] = { days, since: Date.now(), notifiedFor: null };
+  }
+  storeReminderSettings(settings);
+  updateReminderLabels();
+}
+
 function emptyList(selector, text) {
   $(selector).replaceChildren(node("li", text, "empty"));
 }
@@ -851,6 +952,9 @@ async function refresh() {
     remove.addEventListener("click", () =>
       work(remove, async () => {
         await api("watch", { handle: entry.handle, enabled: false });
+        const settings = reminderSettings();
+        delete settings[entry.handle];
+        storeReminderSettings(settings);
         await refresh();
       }),
     );
@@ -859,7 +963,21 @@ async function refresh() {
     mentions.target = "_blank";
     mentions.rel = "noopener noreferrer";
     mentions.setAttribute("aria-label", "Open live X search for mentions of @" + entry.handle);
-    item.append(recheck, remove, mentions);
+    item.dataset.watchHandle = entry.handle;
+    const reminderLabel = node("label", null, "watch-reminder");
+    const reminderCaption = node("span", "Manual reminder · this device");
+    const reminderSelect = node("select");
+    reminderSelect.setAttribute("aria-label", "Manual reminder cadence for @" + entry.handle);
+    for (const [value, text] of [["", "Off"], ["1", "Daily"], ["3", "Every 3 days"], ["7", "Weekly"], ["14", "Every 2 weeks"]])
+      reminderSelect.append(new Option(text, value));
+    const savedReminder = reminderSettings()[entry.handle];
+    reminderSelect.value = savedReminder?.days ? String(savedReminder.days) : "";
+    reminderSelect.addEventListener("change", () => {
+      setReminder(entry.handle, Number(reminderSelect.value) || 0);
+    });
+    reminderLabel.append(reminderCaption, reminderSelect);
+    const reminderStatus = node("small", "", "watch-reminder-status");
+    item.append(recheck, remove, mentions, reminderLabel, reminderStatus);
     if (state.live)
       item.append(
         node(
@@ -869,6 +987,7 @@ async function refresh() {
       );
     $("#watch-list").append(item);
   }
+  updateReminderLabels();
   if (state.changes.length) $("#changes").replaceChildren();
   for (const entry of state.changes) {
     const item = node("li");
@@ -1082,6 +1201,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   setNavigation();
   window.addEventListener("hashchange", setNavigation);
+  window.setInterval(checkDueReminders, 60000);
   for (const button of document.querySelectorAll("[data-theme-choice]")) {
     button.addEventListener("click", () => {
       const theme = button.dataset.themeChoice;
@@ -1154,7 +1274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#auth-submit").disabled = true;
     $("#auth-mode").disabled = true;
     notice("Cloud sign-in is not configured. Guest workspace remains available.");
-    void refresh().catch((error) => notice(error.message));
+    void refresh().then(checkDueReminders).catch((error) => notice(error.message));
   } else {
     let authSync = Promise.resolve();
     const scheduleAuthRefresh = (user) => {
