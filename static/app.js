@@ -147,12 +147,15 @@ async function getCurrentUser() {
 }
 
 let currentOwnerId = null;
+let sharedReportView = null;
 
 async function migrateAndRefresh(user) {
   const nextOwnerId = user?.id || null;
   if (currentOwnerId !== nextOwnerId) {
-    $("#report").replaceChildren();
-    $("#report").hidden = true;
+    if (!sharedReportView) {
+      $("#report").replaceChildren();
+      $("#report").hidden = true;
+    }
     $("#auth-password").value = "";
     currentOwnerId = nextOwnerId;
   }
@@ -978,8 +981,8 @@ document.addEventListener("DOMContentLoaded", () => {
     void work(event.currentTarget, () => addToWatchlist(handle));
   });
   $("#demo").addEventListener("click", () => showSample("mixed"));
-  const sharedReport = readSharedReport();
-  if (sharedReport) report(sharedReport, { focus: false });
+  sharedReportView = readSharedReport();
+  if (sharedReportView) report(sharedReportView, { focus: false });
 
   if (!cloudClient) {
     $("#auth-status").textContent = "Cloud sync unavailable";
