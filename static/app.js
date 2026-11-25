@@ -891,6 +891,8 @@ async function refresh() {
   }
   const filter = $("#history-filter");
   const previous = filter.value;
+  const trendFilter = $("#trend-account");
+  const previousTrend = trendFilter.value;
   const handles = [
     ...new Set(state.history.map((entry) => entry.handle)),
   ].sort();
@@ -900,10 +902,106 @@ async function refresh() {
   );
   filter.value = handles.includes(previous) ? previous : "";
   filter.closest("label").hidden = handles.length < 2;
+  const latestHandle = state.history[0]?.handle || "";
+  trendFilter.replaceChildren(
+    ...handles.map((handle) => new Option("@" + handle, handle)),
+  );
+  trendFilter.value = handles.includes(previousTrend) ? previousTrend : latestHandle;
+  trendFilter.disabled = handles.length === 0;
   renderHistory();
 }
 
+function renderTrend() {
+  const chart = $("#trend-chart");
+  const summary = $("#trend-summary");
+  chart.replaceChildren();
+  const handle = $("#trend-account").value;
+  const reports = (state?.history || [])
+    .filter((scan) => scan.handle === handle && scan.source !== "sample")
+    .map((scan) => {
+      const statuses = fields.map(([key]) => scan.results[key]?.status);
+      const measured = statuses.filter(isMeasuredStatus).length;
+      const visible = statuses.filter((status) => status === "visible").length;
+      const untestable = statuses.filter((status) => status === "untestable").length;
+      return { scan, measured, visible, untestable, score: measured ? Math.round(100 * visible / measured) : null };
+    })
+    .filter((point) => point.score !== null)
+    .sort((a, b) => a.scan.checked - b.scan.checked)
+    .slice(-12);
+
+  if (!handle || !reports.length) {
+    chart.append(node("p", handle
+      ? "No measured reports yet. Save observations that you can verify to create a trend."
+      : "Save a guided report to build a private trend.", "trend-empty"));
+    summary.textContent = "Untestable and unmeasured checks do not create score points.";
+    return;
+  }
+
+  const width = 720, height = 240, left = 54, right = 18, top = 18, bottom = 42;
+  const plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const x = (index) => reports.length === 1
+    ? left + plotWidth / 2
+    : left + (index * plotWidth) / (reports.length - 1);
+  const y = (score) => top + ((100 - score) / 100) * plotHeight;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-labelledby", "trend-svg-title trend-svg-desc");
+  const title = document.createElementNS(svg.namespaceURI, "title");
+  title.id = "trend-svg-title";
+  title.textContent = "Visibility in measured views for @" + handle;
+  const desc = document.createElementNS(svg.namespaceURI, "desc");
+  desc.id = "trend-svg-desc";
+  desc.textContent = reports.length + " saved reports. The latest shows " +
+    reports[reports.length - 1].visible + " visible of " +
+    reports[reports.length - 1].measured + " measured surfaces.";
+  svg.append(title, desc);
+  for (const tick of [0, 50, 100]) {
+    const yy = y(tick);
+    const grid = document.createElementNS(svg.namespaceURI, "line");
+    grid.setAttribute("x1", left); grid.setAttribute("x2", width - right);
+    grid.setAttribute("y1", yy); grid.setAttribute("y2", yy);
+    grid.setAttribute("class", "trend-gridline");
+    const label = document.createElementNS(svg.namespaceURI, "text");
+    label.setAttribute("x", left - 12); label.setAttribute("y", yy + 4);
+    label.setAttribute("text-anchor", "end");
+    label.setAttribute("class", "trend-axis-label");
+    label.textContent = tick + "%";
+    svg.append(grid, label);
+  }
+  const line = document.createElementNS(svg.namespaceURI, "polyline");
+  line.setAttribute("points", reports.map((point, index) => x(index) + "," + y(point.score)).join(" "));
+  line.setAttribute("class", "trend-line");
+  svg.append(line);
+  reports.forEach((point, index) => {
+    const circle = document.createElementNS(svg.namespaceURI, "circle");
+    circle.setAttribute("cx", x(index)); circle.setAttribute("cy", y(point.score));
+    circle.setAttribute("r", "5"); circle.setAttribute("class", "trend-point");
+    const tip = document.createElementNS(svg.namespaceURI, "title");
+    tip.textContent = timestamp(point.scan.checked) + " · " + point.score + "% · " +
+      point.visible + "/" + point.measured + " measured visible" +
+      (point.untestable ? " · " + point.untestable + " untestable" : "");
+    circle.append(tip);
+    svg.append(circle);
+  });
+  const firstDate = document.createElementNS(svg.namespaceURI, "text");
+  firstDate.setAttribute("x", left); firstDate.setAttribute("y", height - 12);
+  firstDate.setAttribute("class", "trend-axis-label");
+  firstDate.textContent = new Date(reports[0].scan.checked * 1000).toLocaleDateString();
+  const lastDate = document.createElementNS(svg.namespaceURI, "text");
+  lastDate.setAttribute("x", width - right); lastDate.setAttribute("y", height - 12);
+  lastDate.setAttribute("text-anchor", "end"); lastDate.setAttribute("class", "trend-axis-label");
+  lastDate.textContent = new Date(reports[reports.length - 1].scan.checked * 1000).toLocaleDateString();
+  svg.append(firstDate, lastDate);
+  chart.append(svg);
+  const latest = reports[reports.length - 1];
+  summary.textContent = "Latest: " + latest.score + "% (" + latest.visible + "/" +
+    latest.measured + " measured surfaces visible) · " + reports.length +
+    " measured reports shown" + (latest.untestable ? " · " + latest.untestable + " untestable" : "") + ".";
+}
+
 function renderHistory() {
+  renderTrend();
   const handle = $("#history-filter").value;
   const entries = state.history.filter(
     (entry) => !handle || entry.handle === handle,
@@ -997,6 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   $("#questions").addEventListener("change", updateProgress);
   $("#history-filter").addEventListener("change", renderHistory);
+  $("#trend-account").addEventListener("change", renderTrend);
   $("#handle-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const handle = $("#handle").value.trim().replace(/^@/, "").toLowerCase();
