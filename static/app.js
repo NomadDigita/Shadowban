@@ -802,8 +802,8 @@ function updateReminderLabels() {
     const { base, dueAt, lastCheck } = reminderTiming(entry.handle, setting);
     if (Date.now() >= dueAt) {
       const since = Number(setting.since) || 0;
-      const lastLabel = lastCheck && lastCheck * 1000 >= since
-        ? timestamp(lastCheck)
+      const lastLabel = lastCheck && lastCheck >= since
+        ? timestamp(Math.floor(lastCheck / 1000))
         : "no check recorded since this reminder was set";
       status.textContent = "Manual check due · " + lastLabel;
       status.dataset.due = "true";
