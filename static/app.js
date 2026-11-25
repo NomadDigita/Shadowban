@@ -38,8 +38,10 @@ const fields = [
 const choices = {
   visible: "Visible",
   missing: "Missing from view",
+  untestable: "Untestable",
   unknown: "Unmeasured",
 };
+const isMeasuredStatus = (status) => status === "visible" || status === "missing";
 let activeHandle;
 let state;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -274,12 +276,19 @@ async function api(route, data) {
   if (route !== "manual") throw new Error("This workspace action is unavailable.");
   const values = data.results;
   if (!values || typeof values !== "object" ||
-      fields.some(([key]) => !["visible", "missing", "unknown"].includes(values[key])) ||
+      fields.some(([key]) => !["visible", "missing", "untestable", "unknown"].includes(values[key])) ||
       fields.every(([key]) => values[key] === "unknown")) {
     throw new Error("Record at least one observation before saving.");
   }
   const results = Object.fromEntries(fields.map(([key]) => [
-    key, { status: values[key], detail: "Recorded by you using the guided check." },
+    key,
+    {
+      status: values[key],
+      detail: String(values[key + "_detail"] || "").trim().slice(0, 280) ||
+        (values[key] === "untestable"
+          ? "The relevant view could not be assessed during this check."
+          : "Recorded by you using the guided check."),
+    },
   ]));
 
   if (user) {
@@ -294,10 +303,10 @@ async function api(route, data) {
   const scan = { id: Date.now(), handle, source: "guided", checked: Math.floor(Date.now() / 1000), results };
   for (const [key] of fields) {
     const current = results[key].status;
-    if (current === "unknown") continue;
+    if (!isMeasuredStatus(current)) continue;
     const previous = workspace.history.find((entry) =>
       entry.handle === handle && entry.source === "guided" &&
-      entry.results[key].status !== "unknown");
+      isMeasuredStatus(entry.results[key].status));
     if (previous && previous.results[key].status !== current) {
       workspace.changes.unshift({ handle, signal: key, before: previous.results[key].status,
         after: current, checked: scan.checked, source: "guided" });
@@ -324,6 +333,8 @@ const followUpInstructions = {
 
 function buildActionPlan(scan) {
   const items = [];
+  const measured = fields.filter(([key]) => isMeasuredStatus(scan.results[key]?.status)).length;
+  const untestable = fields.filter(([key]) => scan.results[key]?.status === "untestable").length;
   for (const [key, label] of fields) {
     const status = scan.results[key]?.status || "unknown";
     if (status === "missing") {
@@ -331,6 +342,12 @@ function buildActionPlan(scan) {
         priority: "Repeat observation",
         surface: label,
         instruction: followUpInstructions[key],
+      });
+    } else if (status === "untestable") {
+      items.push({
+        priority: "Retry when available",
+        surface: label,
+        instruction: "This view could not be assessed, so it is not evidence of a visibility problem. Retry when the complete surface is available. " + followUpInstructions[key],
       });
     } else if (status === "unknown") {
       items.push({
@@ -351,9 +368,11 @@ function buildActionPlan(scan) {
     ? "All four surfaces were marked visible in this snapshot. Save a later check if you want to compare changes."
     : items.some((item) => item.priority === "Repeat observation")
       ? "Repeat each missing observation with the same method before drawing conclusions. Differences can depend on viewer, query, and time."
-      : items.length === fields.length
-        ? "No surface was measured in this report. Record observations only when you can verify them directly."
-        : "Complete the unmeasured checks when you can verify them. Unmeasured surfaces are excluded from the visibility percentage.";
+      : measured === 0 && untestable > 0
+        ? "No surface was measured. Untestable and unmeasured checks are excluded from the visibility percentage."
+        : measured === 0
+          ? "No surface was measured in this report. Record observations only when you can verify them directly."
+          : "Complete the remaining checks when you can verify them. Untestable and unmeasured surfaces are excluded from the visibility percentage.";
   return { summary, items };
 }
 
@@ -369,10 +388,11 @@ function downloadFile(name, type, content) {
 }
 
 function reportData(scan) {
-  const measured = fields.filter(([key]) => scan.results[key].status !== "unknown").length;
+  const measured = fields.filter(([key]) => isMeasuredStatus(scan.results[key].status)).length;
   const visible = fields.filter(([key]) => scan.results[key].status === "visible").length;
+  const untestable = fields.filter(([key]) => scan.results[key].status === "untestable").length;
   return {
-    schema_version: 1,
+    schema_version: 2,
     report_id: scan.id,
     platform: "X",
     handle: scan.handle,
@@ -382,7 +402,8 @@ function reportData(scan) {
       total_surfaces: fields.length,
       measured_surfaces: measured,
       visible_surfaces: visible,
-      unmeasured_surfaces: fields.length - measured,
+      unmeasured_surfaces: fields.filter(([key]) => scan.results[key].status === "unknown").length,
+      untestable_surfaces: untestable,
       visibility_percent: measured ? Math.round(100 * visible / measured) : null,
     },
     action_plan: buildActionPlan(scan),
@@ -395,7 +416,7 @@ function reportData(scan) {
     })),
     limitations: [
       "These observations do not establish an official X moderation decision.",
-      "Visibility can vary by viewer and time. Unmeasured surfaces are excluded from the visibility score.",
+      "Visibility can vary by viewer and time. Untestable and unmeasured surfaces are excluded from the visibility score.",
       "Guided results reflect manually recorded observations.",
     ],
   };
@@ -484,7 +505,7 @@ function readSharedReport() {
     if (payload?.v !== 1 || !/^[a-z0-9_]{1,15}$/.test(payload.h) ||
         !Number.isInteger(payload.t) || payload.t < 1262304000 || payload.t > now + 86400 ||
         !payload.r || fields.some(([key]) =>
-          !["visible", "missing", "unknown"].includes(payload.r[key])) ||
+          !["visible", "missing", "untestable", "unknown"].includes(payload.r[key])) ||
         fields.every(([key]) => payload.r[key] === "unknown")) {
       throw new Error("The shared report is incomplete or invalid.");
     }
@@ -516,13 +537,14 @@ function report(scan, { focus = true } = {}) {
   displayedReportIsShared = scan.source === "shared";
   const panel = $("#report");
   const statuses = Object.values(scan.results);
-  const measured = statuses.filter(
-    (entry) => entry.status !== "unknown",
-  ).length;
+  const measured = statuses.filter((entry) => isMeasuredStatus(entry.status)).length;
   const visible = statuses.filter((entry) => entry.status === "visible").length;
+  const untestable = statuses.filter((entry) => entry.status === "untestable").length;
   const score = measured ? Math.round((100 * visible) / measured) + "%" : "—";
-  const title = !measured
-    ? "Visibility unmeasured"
+  const title = !measured && untestable
+    ? "Checks could not be completed"
+    : !measured
+      ? "Visibility unmeasured"
     : visible === measured
       ? "Visible in measured views"
       : "Visibility differences observed";
@@ -554,9 +576,10 @@ function report(scan, { focus = true } = {}) {
     "p",
     measured +
       " of 4 surfaces measured. " +
+      (untestable ? untestable + " could not be assessed; " : "") +
       (measured
         ? score + " of measured surfaces showed the expected visibility."
-        : "A score requires an observation."),
+        : "No visibility score is available until a surface can be measured."),
   );
   const grid = node("div", null, "grid report-grid");
   for (const [key, label] of fields) {
@@ -596,7 +619,7 @@ function report(scan, { focus = true } = {}) {
     node(
       "p",
       !measured
-        ? "Open the guided check and record any surfaces you can verify directly."
+        ? "Retry checks marked untestable when the relevant X views are available. Do not treat unavailable evidence as a negative result."
         : visible < measured
           ? "Repeat the affected checks from another viewer account and review any notices in X."
           : "Save another check if visibility changes. Search and conversation results can differ by viewer.",
@@ -752,12 +775,21 @@ function start(handle, focus = true) {
     select.id = key;
     select.name = key;
     select.setAttribute("aria-describedby", description.id);
-    for (const value of ["unknown", "visible", "missing"]) {
+    for (const value of ["unknown", "visible", "missing", "untestable"]) {
       const option = node("option", observationLabel(key, value));
       option.value = value;
       select.append(option);
     }
-    card.append(heading, description, link, select);
+    const evidenceLabel = node("label", "Evidence note (optional)", "evidence-label");
+    evidenceLabel.htmlFor = key + "_detail";
+    const evidence = node("textarea");
+    evidence.id = key + "_detail";
+    evidence.name = key + "_detail";
+    evidence.maxLength = 280;
+    evidence.rows = 2;
+    evidence.placeholder = "Viewer, search phrase, time, or why this could not be checked";
+    evidence.setAttribute("aria-label", label + " evidence note");
+    card.append(heading, description, link, select, evidenceLabel, evidence);
     questions.append(card);
   }
   $("#guided").hidden = false;
