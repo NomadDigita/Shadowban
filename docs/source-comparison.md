@@ -19,6 +19,7 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 | Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, and share privacy handling. | Core account history parity; no recurring data collection |
 | Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
 | Community | Opt-in aggregate observations and an opt-in alias-based contributor activity board, gated by minimum participation. | First-party aggregate signal, not an X-account leaderboard |
+| Education | Four quick guides plus ten FAQ answers covering checks, uncertainty, data, privacy, and next steps. | Disclosed workflow and help coverage expanded; no localized content library yet |
 | Design | Original Reachframe visual identity, responsive layout, dark/light themes, and a source-methodology guide. | Source-inspired, not pixel-identical |
 
 The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes.
