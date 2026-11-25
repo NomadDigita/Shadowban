@@ -136,7 +136,13 @@
             <div class="panel-top"><span class="panel-symbol" aria-hidden="true"></span><span class="panel-index">02 / ARCHIVE</span><span id="scan-count" class="count-chip">0 scans</span></div>
             <div class="panel-heading"><div><p class="eyebrow">MEASURE OVER TIME</p><h3>Scan history</h3></div><span class="panel-arrow" aria-hidden="true"></span></div>
             <p class="panel-copy">Reopen a dated report or compare it with an earlier observation.</p>
-            <label class="filter" for="history-filter" hidden>Filter by account<select id="history-filter"></select></label>
+            <label class="filter" for="history-filter" hidden>Filter history by account<select id="history-filter"></select></label>
+            <div class="trend-panel" aria-labelledby="trend-heading">
+              <div class="trend-heading"><div><p class="eyebrow">MEASURED HISTORY</p><h4 id="trend-heading">Visibility trend</h4></div><label class="filter" for="trend-account">Account<select id="trend-account"><option value="">No saved history</option></select></label></div>
+              <p class="trend-note">Share of measured surfaces marked visible in each saved report. This is not an X ranking or restriction score.</p>
+              <div id="trend-chart" class="trend-chart"></div>
+              <p id="trend-summary" class="trend-summary" aria-live="polite">Save a guided report to build a private trend.</p>
+            </div>
             <ul id="history-list" class="activity-list"></ul>
             <a id="csv-export" class="secondary action-link" href="/reports/history.csv" hidden>Download full history CSV <span aria-hidden="true">↓</span></a>
           </section>
