@@ -66,7 +66,7 @@ function setTheme(theme) {
 }
 
 function setNavigation() {
-  const location = ["#monitor", "#history"].includes(window.location.hash)
+  const location = ["#monitor", "#history", "#mentions"].includes(window.location.hash)
     ? window.location.hash
     : "#check";
   for (const link of document.querySelectorAll("nav a")) {
@@ -1003,6 +1003,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!/^[a-z0-9_]{1,15}$/.test(handle))
       return notice("Use 1–15 letters, numbers or underscores.");
     start(handle);
+  });
+  $("#mention-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const handle = $("#mention-handle").value.trim().replace(/^@/, "").toLowerCase();
+    if (!/^[a-z0-9_]{1,15}$/.test(handle)) {
+      $("#mention-result").hidden = true;
+      return notice("Use 1–15 letters, numbers or underscores.");
+    }
+    const kind = $("#mention-kind").value;
+    const query = kind === "mentions"
+      ? "@" + handle + " -from:" + handle + " -filter:retweets"
+      : kind === "replies"
+        ? "to:" + handle + " -filter:retweets"
+        : "from:" + handle + " -filter:replies -filter:retweets";
+    const url = new URL("https://x.com/search");
+    url.searchParams.set("q", query);
+    url.searchParams.set("f", $("#mention-sort").value);
+    const link = $("#mention-result");
+    link.replaceChildren();
+    const anchor = node("a", "Open results on X ↗", "primary-button");
+    anchor.href = url.toString();
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    const queryText = node("code", query);
+    link.append(anchor, queryText);
+    link.hidden = false;
+    notice("X search is ready for @" + handle + ".");
   });
   $("#guided-form").addEventListener("submit", (event) => {
     event.preventDefault();
