@@ -17,22 +17,22 @@ const fields = [
   [
     "suggestions",
     "Account suggestions",
-    "Type the exact handle into X search and inspect the dropdown. Record whether the account appears.",
+    "Search the exact handle while signed in as a separate viewer. Record the viewer context and time; repeat before treating an absence as a pattern.",
   ],
   [
     "search",
-    "Post search",
-    "Find a recent original post on the profile. Search its exact text from a separate viewer account. If a recent public post cannot be identified, leave this unmeasured.",
+    "Post search visibility",
+    "Choose a recent original public post and search a distinctive exact phrase from a separate viewer. If the post itself is unavailable, choose Untestable.",
   ],
   [
     "thread",
     "Reply presence",
-    "Find a reply on the profile, then open its parent conversation as a separate viewer. Record an absence only if you can check the whole thread.",
+    "Open a recent reply’s full parent conversation from a separate viewer. Mark it missing only when the complete thread and expanded replies are available.",
   ],
   [
     "placement",
-    "Reply placement",
-    "Compare the default conversation with another available sort or the expanded replies. Mark “Different placement” if the reply appears only in the alternate view.",
+    "Reply ranking",
+    "Compare the default conversation with an alternate or expanded replies view. Ranking can vary by viewer and time.",
   ],
 ];
 const choices = {
@@ -734,10 +734,16 @@ function priorComparison(scan) {
   comparison.append(node("summary", "Compare with " + timestamp(prior.checked)));
   const list = node("ul", null, "activity");
   for (const [key, label] of fields) {
-    const before = observationLabel(key, prior.results[key].status);
-    const after = observationLabel(key, scan.results[key].status);
+    const beforeStatus = prior.results[key].status;
+    const afterStatus = scan.results[key].status;
+    if (!isMeasuredStatus(beforeStatus) || !isMeasuredStatus(afterStatus)) continue;
+    const before = observationLabel(key, beforeStatus);
+    const after = observationLabel(key, afterStatus);
     list.append(node("li", label + " · " +
       (before === after ? after + " (unchanged)" : before + " → " + after)));
+  }
+  if (!list.children.length) {
+    list.append(node("li", "No comparable measured surfaces across these reports."));
   }
   comparison.append(list);
   return comparison;
