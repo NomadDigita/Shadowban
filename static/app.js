@@ -374,7 +374,7 @@ function reportData(scan) {
     platform: "X",
     handle: scan.handle,
     captured_at_utc: new Date(scan.checked * 1000).toISOString(),
-    evidence_source: { id: scan.source, label: scan.source === "api" ? "X API" : "Guided observation" },
+    evidence_source: { id: scan.source, label: scan.source === "api" ? "X API" : scan.source === "shared" ? "Shared guided observation" : "Guided observation" },
     coverage: {
       total_surfaces: fields.length,
       measured_surfaces: measured,
@@ -454,6 +454,61 @@ function notice(message) {
   $("#notice").textContent = message;
 }
 
+function makeShareToken(scan) {
+  const payload = {
+    v: 1,
+    h: scan.handle,
+    t: scan.checked,
+    r: Object.fromEntries(fields.map(([key]) => [key, scan.results[key].status])),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+}
+
+function readSharedReport() {
+  const token = new URLSearchParams(window.location.search).get("share");
+  if (!token) return null;
+  try {
+    const base64 = token.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload?.v !== 1 || !/^[a-z0-9_]{1,15}$/.test(payload.h) ||
+        !Number.isInteger(payload.t) || payload.t < 1262304000 || payload.t > now + 86400 ||
+        !payload.r || fields.some(([key]) =>
+          !["visible", "missing", "unknown"].includes(payload.r[key])) ||
+        fields.every(([key]) => payload.r[key] === "unknown")) {
+      throw new Error("The shared report is incomplete or invalid.");
+    }
+    return {
+      id: "shared-" + payload.t,
+      handle: payload.h,
+      source: "shared",
+      checked: payload.t,
+      results: Object.fromEntries(fields.map(([key]) => [
+        key,
+        { status: payload.r[key], detail: "Shared user-verified observation." },
+      ])),
+    };
+  } catch {
+    notice("This share link is invalid or incomplete. Open a fresh link from its owner.");
+    return null;
+  }
+}
+
+function makeShareUrl(scan) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.searchParams.set("share", makeShareToken(scan));
+  url.hash = "report";
+  return url.toString();
+}
+
 function report(scan, { focus = true } = {}) {
   const panel = $("#report");
   const statuses = Object.values(scan.results);
@@ -471,6 +526,7 @@ function report(scan, { focus = true } = {}) {
     guided: "Guided observation",
     api: "X API",
     sample: "Fictional sample",
+    shared: "Shared guided observation",
   }[scan.source];
 
   const head = node("div", null, "summary");
@@ -597,7 +653,33 @@ function report(scan, { focus = true } = {}) {
       event.preventDefault();
       openPrintReport(scan);
     });
-    exports.append(json, print);
+    const share = node("button", "Copy share link", "secondary");
+    const shareWrap = node("div", null, "share-export");
+    const shareDisclosure = node(
+      "small",
+      "Anyone with the link can view @" + scan.handle + ", the check date, and the recorded outcomes.",
+    );
+    const shareInput = document.createElement("input");
+    shareInput.type = "text";
+    shareInput.readOnly = true;
+    shareInput.hidden = true;
+    shareInput.className = "share-link-input";
+    shareInput.setAttribute("aria-label", "Share link");
+    share.addEventListener("click", async () => {
+      const url = makeShareUrl(scan);
+      shareInput.value = url;
+      shareInput.hidden = false;
+      try {
+        await navigator.clipboard.writeText(url);
+        notice("Share link copied. It contains only the public handle, check time, and recorded outcomes.");
+      } catch {
+        shareInput.focus();
+        shareInput.select();
+        notice("Copy the selected share link. It contains only the public handle, check time, and recorded outcomes.");
+      }
+    });
+    shareWrap.append(shareDisclosure, share, shareInput);
+    exports.append(json, print, shareWrap);
     panel.append(actions, exports);
     const comparison = priorComparison(scan);
     if (comparison) panel.insertBefore(comparison, advice);
@@ -896,6 +978,8 @@ document.addEventListener("DOMContentLoaded", () => {
     void work(event.currentTarget, () => addToWatchlist(handle));
   });
   $("#demo").addEventListener("click", () => showSample("mixed"));
+  const sharedReport = readSharedReport();
+  if (sharedReport) report(sharedReport, { focus: false });
 
   if (!cloudClient) {
     $("#auth-status").textContent = "Cloud sync unavailable";
