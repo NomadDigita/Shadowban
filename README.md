@@ -24,7 +24,7 @@ Every saved report includes suggested follow-up steps derived only from the reco
 
 ## Reports and exports
 
-Open a saved report and choose Download JSON or Print report. Choose Download full history CSV in Scan history to export saved reports. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
+Open a saved report and choose Download JSON, Print report, or Copy share link. Share links encode only the public handle, check time, and the four recorded outcomes; they do not include account IDs, email addresses, or cloud data. Anyone with a share link can view those included details. Choose Download full history CSV in Scan history to export saved reports. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
 
 Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
 
