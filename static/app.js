@@ -225,7 +225,7 @@ async function api(route, data) {
     for (const scan of [...history].reverse()) {
       for (const [key] of fields) {
         const current = scan.results[key]?.status;
-        if (!current || current === "unknown") continue;
+        if (!isMeasuredStatus(current)) continue;
         const mapKey = scan.handle + ":" + key;
         const before = previous.get(mapKey);
         if (before && before !== current) {
