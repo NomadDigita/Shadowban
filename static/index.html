@@ -26,6 +26,7 @@
         <a href="#check" aria-current="location"><span class="nav-dot"></span>Check</a>
         <a href="#monitor"><span class="nav-icon" aria-hidden="true">◷</span>Watchlist</a>
         <a href="#history"><span class="nav-icon" aria-hidden="true">⌁</span>History</a>
+        <a href="#mentions"><span class="nav-icon" aria-hidden="true">⌕</span>Mentions</a>
       </nav>
       <div class="header-actions">
         <div class="account">
@@ -88,6 +89,20 @@
       </section>
 
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <section id="mentions" class="data-panel mention-panel" aria-labelledby="mentions-heading">
+        <div class="panel-top"><span class="panel-symbol" aria-hidden="true">⌕</span><span class="panel-index">DISCOVERY / 01</span><span class="count-chip">X SEARCH</span></div>
+        <div class="panel-heading"><div><p class="eyebrow">PUBLIC CONVERSATIONS</p><h2 id="mentions-heading">Find the conversation around an account.</h2></div></div>
+        <p class="panel-copy">Build a focused X search for mentions, replies, or posts. Search results open on X; Reachframe does not claim to fetch or rank a live feed.</p>
+        <form id="mention-form" class="mention-form">
+          <div class="mention-field"><label for="mention-handle">Public X handle</label><div class="handle-input"><span aria-hidden="true">@</span><input id="mention-handle" maxlength="16" placeholder="yourhandle" autocomplete="off" autocapitalize="none" required /></div></div>
+          <div class="mention-field"><label for="mention-kind">Find</label><select id="mention-kind"><option value="mentions">Mentions by others</option><option value="replies">Replies to the account</option><option value="posts">Posts by the account</option></select></div>
+          <div class="mention-field"><label for="mention-sort">Sort results</label><select id="mention-sort"><option value="live">Latest</option><option value="top">Top</option></select></div>
+          <button type="submit" class="secondary">Build X search ↗</button>
+        </form>
+        <div id="mention-result" class="mention-result" hidden></div>
+        <p class="form-footnote"><span class="mini-lock" aria-hidden="true">◇</span> Search results may depend on viewer, access, and X ranking.</p>
+      </section>
 
       <section id="guided" class="guided-section" hidden aria-labelledby="guide-title">
         <div class="section-kicker"><span>LIVE WORKSPACE</span><span class="kicker-line"></span><span>01 / 03</span></div>
