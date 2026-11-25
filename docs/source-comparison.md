@@ -1,34 +1,37 @@
 # Reachframe source comparison
 
-Reviewed in a browser on 2026-11-21: the Shadowban Radar homepage, methodology, public demo, pricing, and monitoring guide.
+Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderboard, pricing, and monitoring guide on 2026-11-25. This is a feature and workflow comparison; ShadowbanRadar's private collection and scoring code is not publicly inspectable.
 
-## Product behavior seen in the source
+## ShadowbanRadar's public product
 
-- Public, no-login X account check with four separate signals: search suggestions, post search, reply presence (ghost ban), and reply placement (deboosting).
-- Each signal has its own verdict and confidence. A result can be untestable; those checks are excluded from the score. Private/no-post accounts and accounts with no recent replies have explicit states.
-- The overall verdict, measurement coverage, and score are separate. No measured checks produces no score, rather than zero.
-- A detailed dated report with evidence, limits, an action plan, and account-level information.
-- The demo is explicitly fictional and interactive.
-- Optional paid plans provide multi-account recurring checks, change alerts, history/trends, and daily recaps. The service says it only uses public X output and does not have an internal X moderation flag or cause.
-- Public guide pages, methodology, FAQs, statistics, and leaderboard support the core checker.
+- No-login public X account checker with separate checks for account suggestions, post search, reply presence (ghost visibility), and reply placement (deboosting).
+- Per-surface outcomes include confidence and an untestable state. Untestable surfaces are excluded from the score; the overall verdict and coverage are separate.
+- Dated account reports, evidence, caveats, and action steps. The demo is interactive and explicitly fictional.
+- Monitoring plans advertise recurring checks, account history, change alerts, and daily recaps.
+- Public product pages include methodology, help/FAQ content, statistics, a live account leaderboard, and mention discovery.
 
-## Reachframe today
+## Reachframe now
 
-- The four check categories, an illustrative report, guided observation, unmeasured state, measured-only visibility percentage, history, watchlist, change comparisons, JSON/CSV/print exports, and light/dark themes are implemented.
-- Observations are user-recorded; Reachframe does not independently query X. They are saved to local storage on one browser/device.
-- There is no login, durable database, background monitoring, email/Telegram notifications, public live leaderboard, source-equivalent account score, or automated action plan.
-- The current experience is therefore a transparent manual visibility workspace, not a functional copy of the source's data collection service.
+| Area | Reachframe implementation | Parity |
+| --- | --- | --- |
+| Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context. | Workflow aligned; no automatic X inspection |
+| Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. | Strong workflow parity; source confidence and independent provider evidence absent |
+| Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, and share privacy handling. | Core account history parity; no recurring data collection |
+| Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
+| Community | Opt-in aggregate observations and an opt-in alias-based contributor activity board, gated by minimum participation. | First-party aggregate signal, not an X-account leaderboard |
+| Design | Original Reachframe visual identity, responsive layout, dark/light themes, and a source-methodology guide. | Source-inspired, not pixel-identical |
 
-## Architecture being prepared
+The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes.
 
-The Supabase migration in this branch creates user-owned scan history and watchlists with row-level security. It intentionally contains no provider credentials and no public anonymous write policy. The frontend should use only a Supabase publishable key; privileged database and provider secrets must stay server-side.
+## Remaining gaps to source-level behavior
 
-## Remaining work for functional parity
+1. **Provider-backed inspection:** Reachframe has no authorized data provider that can reliably inspect suggestions, search visibility, full conversations, and ranking. Until one is available, automatic results must not be fabricated.
+2. **Scheduled monitoring and alerts:** Watchlists save accounts, but do not run background checks or send daily email/Telegram alerts. These need an authorized provider and a delivery service.
+3. **Account leaderboard and statistics:** Reachframe has opt-in aggregates, but no verified public X metrics, topic filters, rank history, or large-scale account leaderboard.
+4. **In-app mention feed:** The builder opens a real X search. Reachframe does not fetch, store, or rank mention posts.
+5. **Educational coverage:** Expand guide, FAQ, statistics, and account-state handling (private/no-post accounts, unavailable replies, and provider-confidence states).
+6. **Data rollout:** The untestable status requires a Supabase constraint migration. Apply it to the Reachframe project before deploying that branch to production.
 
-1. Create an isolated Reachframe Supabase project, apply the migration, enable and configure sign-in email delivery, and connect the public URL/key to Vercel.
-2. Implement account sign-in, session state, and sync of scans/watchlists to per-user rows while retaining a clear no-login free check.
-3. Add a real public-data inspection provider behind a server endpoint. No fake automated outcomes: searches and thread checks must distinguish pass, fail, and untestable with evidence and confidence.
-4. Add scheduled rechecks and deduplicated alerts only after an authorized provider and email/Telegram delivery configuration are available.
-5. Build the action plan, score trend, optional multi-account plans, language/accessibility coverage, educational guide content, and source-inspired directory pages with original branding and copy.
+## Parity limit
 
-The source's internal provider and scoring implementation are not public. Reachframe can reproduce its observable workflow and disclosed methodology, but matching its internal data source or hidden decisions cannot be verified from public pages.
+A true 100% reproduction of ShadowbanRadar's private account data, collection provider, and scoring cannot be verified from the public website. Reachframe can match the disclosed user workflow and continue adding evidence-based features, but only authorized integrations can provide comparable live results.
