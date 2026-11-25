@@ -26,6 +26,7 @@
         <a href="#check" aria-current="location"><span class="nav-dot"></span>Check</a>
         <a href="#monitor"><span class="nav-icon" aria-hidden="true">◷</span>Watchlist</a>
         <a href="#history"><span class="nav-icon" aria-hidden="true">⌁</span>History</a>
+        <a href="#mentions"><span class="nav-icon" aria-hidden="true">⌕</span>Mentions</a>
       </nav>
       <div class="header-actions">
         <div class="account">
@@ -89,10 +90,24 @@
 
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
+      <section id="mentions" class="data-panel mention-panel" aria-labelledby="mentions-heading">
+        <div class="panel-top"><span class="panel-symbol" aria-hidden="true">⌕</span><span class="panel-index">DISCOVERY / 01</span><span class="count-chip">X SEARCH</span></div>
+        <div class="panel-heading"><div><p class="eyebrow">PUBLIC CONVERSATIONS</p><h2 id="mentions-heading">Find the conversation around an account.</h2></div></div>
+        <p class="panel-copy">Build a focused X search for mentions, replies, or posts. Search results open on X; Reachframe does not claim to fetch or rank a live feed.</p>
+        <form id="mention-form" class="mention-form">
+          <div class="mention-field"><label for="mention-handle">Public X handle</label><div class="handle-input"><span aria-hidden="true">@</span><input id="mention-handle" maxlength="16" placeholder="yourhandle" autocomplete="off" autocapitalize="none" required /></div></div>
+          <div class="mention-field"><label for="mention-kind">Find</label><select id="mention-kind"><option value="mentions">Mentions by others</option><option value="replies">Replies to the account</option><option value="posts">Posts by the account</option></select></div>
+          <div class="mention-field"><label for="mention-sort">Sort results</label><select id="mention-sort"><option value="live">Latest</option><option value="top">Top</option></select></div>
+          <button type="submit" class="secondary">Build X search ↗</button>
+        </form>
+        <div id="mention-result" class="mention-result" hidden></div>
+        <p class="form-footnote"><span class="mini-lock" aria-hidden="true">◇</span> Search results may depend on viewer, access, and X ranking.</p>
+      </section>
+
       <section id="guided" class="guided-section" hidden aria-labelledby="guide-title">
         <div class="section-kicker"><span>LIVE WORKSPACE</span><span class="kicker-line"></span><span>01 / 03</span></div>
         <div class="section-title-row">
-          <div><p class="eyebrow">GUIDED FIELD CHECK</p><h2 id="guide-title">Observations for this account</h2><p class="section-intro">Use a separate viewer account. If you cannot verify a surface, leave it unmeasured.</p></div>
+          <div><p class="eyebrow">GUIDED FIELD CHECK</p><h2 id="guide-title">Observations for this account</h2><p class="section-intro">Use a separate viewer account. Choose Untestable when a view is unavailable; leave it Unmeasured if you have not checked it.</p></div>
           <span id="progress" class="progress-chip">0 of 4 recorded</span>
         </div>
         <form id="guided-form">
@@ -168,13 +183,13 @@
         <div class="method-layout">
           <div class="method-heading"><p class="eyebrow">CLEAR BY DESIGN</p><h2 id="method-heading">Evidence first.<br /><span>Interpretation second.</span></h2><p>Visibility can change by viewer, query, and time. Reachframe keeps those conditions attached to the record.</p><a class="method-link" href="https://help.x.com/en/using-x/x-search" target="_blank" rel="noopener noreferrer">Review X search guidance <span aria-hidden="true"></span></a></div>
           <div class="method-list">
-            <article><span class="method-number">01</span><div><h3>Account suggestions</h3><p>Search the exact public handle and inspect whether the account appears in suggestions.</p></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
-            <article><span class="method-number">02</span><div><h3>Post search</h3><p>Search the exact text of a recent public post from a separate viewer account.</p></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
-            <article><span class="method-number">03</span><div><h3>Reply presence</h3><p>Check a reply inside its parent conversation as another viewer.</p></div><span class="method-symbol" aria-hidden="true">↳</span></article>
-            <article><span class="method-number">04</span><div><h3>Reply placement</h3><p>Compare the default conversation with alternate or expanded reply views.</p></div><span class="method-symbol" aria-hidden="true">↕</span></article>
+            <article><span class="method-number">01</span><div><h3>Account suggestions</h3><p>Search the exact public handle while signed in as a separate viewer. Record the viewer context and time; repeat before treating an absence as a pattern.</p><small class="method-caveat">A missing suggestion can reflect personalization or query differences.</small></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
+            <article><span class="method-number">02</span><div><h3>Post search visibility</h3><p>Choose a recent original public post and search a distinctive phrase from a separate viewer account. Repeat with another post if needed.</p><small class="method-caveat">A deleted, protected, or unindexed post cannot establish a restriction.</small></div><span class="method-symbol" aria-hidden="true">⌕</span></article>
+            <article><span class="method-number">03</span><div><h3>Reply presence</h3><p>Open a reply’s full parent conversation from a separate viewer. Only mark it missing when the complete thread and expanded replies were available.</p><small class="method-caveat">If the thread is incomplete or unavailable, choose Untestable.</small></div><span class="method-symbol" aria-hidden="true">↳</span></article>
+            <article><span class="method-number">04</span><div><h3>Reply ranking</h3><p>Compare the default conversation with alternate or expanded reply views and note where the reply appears.</p><small class="method-caveat">Ranking can vary with viewer, interaction, and time.</small></div><span class="method-symbol" aria-hidden="true">↕</span></article>
           </div>
         </div>
-        <div class="method-note"><span aria-hidden="true">i</span><p>Unmeasured surfaces stay out of the visibility score. A missing result can have several causes and does not prove an account restriction. Review notices and account status in X for official information.</p><a href="https://help.x.com/en/rules-and-policies/x-rules" target="_blank" rel="noopener noreferrer">X policies </a></div>
+        <div class="method-note"><span aria-hidden="true">i</span><p>Untestable and unmeasured surfaces stay out of the visibility score. A missing result can have several causes and does not prove an account restriction. Review notices and account status in X for official information.</p><a href="https://help.x.com/en/rules-and-policies/x-rules" target="_blank" rel="noopener noreferrer">X policies </a></div>
       </section>
 
       <footer class="site-footer">
