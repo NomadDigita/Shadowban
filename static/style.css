@@ -398,3 +398,19 @@ button { color: inherit; }
 .mention-result code { color: var(--muted); font: .77rem var(--mono); overflow-wrap: anywhere; }
 @media (max-width: 850px) { .mention-panel { width: min(100% - 36px, 720px); margin: 40px auto; } .mention-form { grid-template-columns: 1fr 1fr; } .mention-form > button { justify-self: start; } }
 @media (max-width: 540px) { .mention-form { grid-template-columns: 1fr; } .mention-form > button { width: 100%; } .mention-result { align-items: flex-start; flex-direction: column; } }
+
+.trend-panel { margin: 22px 0 24px; padding: 18px 0 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.trend-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.trend-heading h4 { margin: 4px 0 0; font-size: 1.12rem; letter-spacing: -.03em; }
+.trend-heading .filter { display: grid; gap: 5px; min-width: 145px; font-size: .72rem; }
+.trend-heading .filter select { min-height: 36px; }
+.trend-note,.trend-summary { color: var(--muted); font-size: .76rem; line-height: 1.55; }
+.trend-chart { width: 100%; min-height: 120px; }
+.trend-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.trend-gridline { stroke: var(--line); stroke-width: 1; }
+.trend-axis-label { fill: var(--muted); font: 11px var(--mono); }
+.trend-line { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.trend-point { fill: var(--surface); stroke: var(--accent); stroke-width: 3; }
+.trend-empty { padding: 26px 0; color: var(--muted); font-size: .82rem; }
+.trend-summary { margin: 10px 0 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 500px) { .trend-heading { align-items: stretch; flex-direction: column; } .trend-heading .filter { width: 100%; } }
