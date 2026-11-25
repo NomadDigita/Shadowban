@@ -825,15 +825,18 @@ function checkDueReminders() {
     const { base, dueAt } = reminderTiming(entry.handle, setting);
     const key = String(base);
     if (Date.now() < dueAt || setting.notifiedFor === key) continue;
-    if (localStorage.getItem("reachframe-browser-alerts") === "on" &&
-        "Notification" in window && Notification.permission === "granted") {
+    if (localStorage.getItem("reachframe-browser-alerts") !== "on" ||
+        !("Notification" in window) || Notification.permission !== "granted") continue;
+    try {
       new Notification("Manual Reachframe check due", {
         body: "Open Reachframe to repeat or start a manual visibility check for @" + entry.handle + ".",
         tag: "reachframe-reminder-" + entry.handle,
       });
+      setting.notifiedFor = key;
+      changed = true;
+    } catch {
+      // Keep the reminder due so it can be retried after browser alerts are available.
     }
-    setting.notifiedFor = key;
-    changed = true;
   }
   if (changed) storeReminderSettings(settings);
   updateReminderLabels();
