@@ -196,6 +196,9 @@ button { color: inherit; }
 .advice h3 { font-size: .85rem; }.advice p { margin-top: 3px; color: var(--muted); font-size: .83rem; }
 .comparison summary { color: var(--accent); cursor: pointer; font-weight: 650; font-size: .83rem; }
 .report-exports { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.share-export { display: grid; flex-basis: 100%; justify-items: start; gap: 8px; max-width: 100%; }
+.share-export small { max-width: 620px; color: var(--ink-soft); font-size: .72rem; line-height: 1.5; }
+.share-link-input { width: min(100%, 680px); min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--page); font: inherit; font-size: .78rem; }
 .action-link { display: inline-flex; justify-content: space-between; align-items: center; gap: 9px; width: fit-content; padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--surface); text-decoration: none; font-size: .78rem; font-weight: 650; }
 .action-link:hover { border-color: var(--accent); color: var(--accent); }
 .workspace-section { background: var(--surface); }
