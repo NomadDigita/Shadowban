@@ -147,12 +147,12 @@ async function getCurrentUser() {
 }
 
 let currentOwnerId = null;
-let sharedReportView = null;
+let displayedReportIsShared = false;
 
 async function migrateAndRefresh(user) {
   const nextOwnerId = user?.id || null;
   if (currentOwnerId !== nextOwnerId) {
-    if (!sharedReportView) {
+    if (!displayedReportIsShared) {
       $("#report").replaceChildren();
       $("#report").hidden = true;
     }
@@ -513,6 +513,7 @@ function makeShareUrl(scan) {
 }
 
 function report(scan, { focus = true } = {}) {
+  displayedReportIsShared = scan.source === "shared";
   const panel = $("#report");
   const statuses = Object.values(scan.results);
   const measured = statuses.filter(
@@ -981,8 +982,8 @@ document.addEventListener("DOMContentLoaded", () => {
     void work(event.currentTarget, () => addToWatchlist(handle));
   });
   $("#demo").addEventListener("click", () => showSample("mixed"));
-  sharedReportView = readSharedReport();
-  if (sharedReportView) report(sharedReportView, { focus: false });
+  const sharedReport = readSharedReport();
+  if (sharedReport) report(sharedReport, { focus: false });
 
   if (!cloudClient) {
     $("#auth-status").textContent = "Cloud sync unavailable";
