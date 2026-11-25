@@ -377,7 +377,7 @@ function reportData(scan) {
     platform: "X",
     handle: scan.handle,
     captured_at_utc: new Date(scan.checked * 1000).toISOString(),
-    evidence_source: { id: scan.source, label: scan.source === "api" ? "X API" : scan.source === "shared" ? "Shared guided observation" : "Guided observation" },
+    evidence_source: { id: scan.source, label: scan.source === "api" ? "X API" : scan.source === "shared" ? "Shared report · not independently verified" : "Guided observation" },
     coverage: {
       total_surfaces: fields.length,
       measured_surfaces: measured,
@@ -495,7 +495,7 @@ function readSharedReport() {
       checked: payload.t,
       results: Object.fromEntries(fields.map(([key]) => [
         key,
-        { status: payload.r[key], detail: "Shared user-verified observation." },
+        { status: payload.r[key], detail: "Included in this shared link. Reachframe has not independently verified this observation." },
       ])),
     };
   } catch {
@@ -529,7 +529,7 @@ function report(scan, { focus = true } = {}) {
     guided: "Guided observation",
     api: "X API",
     sample: "Fictional sample",
-    shared: "Shared guided observation",
+    shared: "Shared report · not independently verified",
   }[scan.source];
 
   const head = node("div", null, "summary");
