@@ -783,7 +783,7 @@ function reminderTiming(handle, setting) {
   const lastCheck = lastSavedCheck(handle) * 1000;
   const base = Math.max(Number(setting?.since) || 0, lastCheck);
   const days = Number(setting?.days) || 0;
-  return { base, dueAt: base + days * 86400000 };
+  return { base, dueAt: base + days * 86400000, lastCheck };
 }
 
 function updateReminderLabels() {
@@ -799,10 +799,13 @@ function updateReminderLabels() {
       status.removeAttribute("data-due");
       continue;
     }
-    const { base, dueAt } = reminderTiming(entry.handle, setting);
+    const { base, dueAt, lastCheck } = reminderTiming(entry.handle, setting);
     if (Date.now() >= dueAt) {
-      status.textContent = "Manual check due · last saved " +
-        (base ? timestamp(Math.floor(base / 1000)) : "not checked yet");
+      const since = Number(setting.since) || 0;
+      const lastLabel = lastCheck && lastCheck * 1000 >= since
+        ? timestamp(lastCheck)
+        : "no check recorded since this reminder was set";
+      status.textContent = "Manual check due · " + lastLabel;
       status.dataset.due = "true";
     } else {
       status.textContent = "Next manual reminder " + timestamp(Math.floor(dueAt / 1000)) +
@@ -825,7 +828,7 @@ function checkDueReminders() {
     if (localStorage.getItem("reachframe-browser-alerts") === "on" &&
         "Notification" in window && Notification.permission === "granted") {
       new Notification("Manual Reachframe check due", {
-        body: "It is time to repeat your saved visibility check for @" + entry.handle + ".",
+        body: "Open Reachframe to repeat or start a manual visibility check for @" + entry.handle + ".",
         tag: "reachframe-reminder-" + entry.handle,
       });
     }
