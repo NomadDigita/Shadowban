@@ -42,6 +42,31 @@ const choices = {
   unknown: "Unmeasured",
 };
 const isMeasuredStatus = (status) => status === "visible" || status === "missing";
+function evidenceConfidence(entry) {
+  const checks = [1, 2, 3].includes(Number(entry?.checks)) ? Number(entry.checks) : null;
+  const viewers = [1, 2, 3].includes(Number(entry?.viewers)) ? Number(entry.viewers) : null;
+  if (!isMeasuredStatus(entry?.status) || (checks === null && viewers === null)) return null;
+  const level = checks !== null && checks >= 3 && viewers !== null && viewers >= 2
+    ? "Corroborated"
+    : (checks !== null && checks >= 2) || (viewers !== null && viewers >= 2)
+      ? "Repeated"
+      : checks !== null && viewers !== null
+        ? "Single observation"
+        : "Partial self-report";
+  return {
+    level,
+    checks: checks === 3 ? "3+" : checks === null ? null : String(checks),
+    viewers: viewers === 3 ? "3+" : viewers === null ? null : String(viewers),
+  };
+}
+function confidenceLabel(entry) {
+  const confidence = evidenceConfidence(entry);
+  const labelCount = (value, singular) => value === null ? singular + " count not reported" :
+    value === "3+" ? "3+ " + singular + "s" : countLabel(Number(value), singular);
+  return confidence ? confidence.level + " · " +
+    labelCount(confidence.checks, "check") + " · " +
+    labelCount(confidence.viewers, "viewer") : null;
+}
 let activeHandle;
 let state;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -284,6 +309,10 @@ async function api(route, data) {
     key,
     {
       status: values[key],
+      ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_checks"])
+        ? { checks: Number(values[key + "_checks"]) } : {}),
+      ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_viewers"])
+        ? { viewers: Number(values[key + "_viewers"]) } : {}),
       detail: String(values[key + "_detail"] || "").trim().slice(0, 280) ||
         (values[key] === "untestable"
           ? "The relevant view could not be assessed during this check."
@@ -392,7 +421,7 @@ function reportData(scan) {
   const visible = fields.filter(([key]) => scan.results[key].status === "visible").length;
   const untestable = fields.filter(([key]) => scan.results[key].status === "untestable").length;
   return {
-    schema_version: 2,
+    schema_version: 3,
     report_id: scan.id,
     platform: "X",
     handle: scan.handle,
@@ -413,11 +442,13 @@ function reportData(scan) {
       outcome: scan.results[key].status,
       outcome_label: observationLabel(key, scan.results[key].status),
       evidence: scan.results[key].detail,
+      evidence_confidence: evidenceConfidence(scan.results[key]),
     })),
     limitations: [
       "These observations do not establish an official X moderation decision.",
       "Visibility can vary by viewer and time. Untestable and unmeasured surfaces are excluded from the visibility score.",
-      "Guided results reflect manually recorded observations.",
+      "Guided results and any repeat-check or viewer counts reflect user-entered, self-reported information. Reachframe does not independently verify them.",
+      "Confidence labels are a transparent summary of reported counts: repeated means 2+ checks or viewers; corroborated means 3+ checks across at least 2 viewers; a partial self-report means one count dimension was omitted. They are not probabilities or X enforcement signals.",
     ],
   };
 }
@@ -432,14 +463,16 @@ function csvCell(value) {
 function downloadHistoryCsv() {
   const headers = ["report_id", "handle", "captured_at_utc", "evidence_source",
     "total_surfaces", "measured_surfaces", "visible_surfaces", "unmeasured_surfaces", "visibility_percent",
-    ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence"]), "limitations"];
+    ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence", key + "_checks_self_reported", key + "_viewers_self_reported", key + "_confidence_label"]), "limitations"];
   const rows = (state?.history || readWorkspace().history).map((scan) => {
     const report = reportData(scan);
     const c = report.coverage;
     return [
       scan.id, scan.handle, report.captured_at_utc, scan.source,
       c.total_surfaces, c.measured_surfaces, c.visible_surfaces, c.unmeasured_surfaces, c.visibility_percent,
-      ...report.observations.flatMap((item) => [item.outcome_label, item.evidence]),
+      ...report.observations.flatMap((item) => [item.outcome_label, item.evidence,
+        item.evidence_confidence?.checks || "", item.evidence_confidence?.viewers || "",
+        item.evidence_confidence?.level || ""]),
       report.limitations.join(" "),
     ];
   });
@@ -449,7 +482,7 @@ function downloadHistoryCsv() {
 function openPrintReport(scan) {
   const data = reportData(scan);
   const rows = data.observations.map((item) =>
-    `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong><p>${escapeHtml(item.evidence)}</p></article>`
+    `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong>${item.evidence_confidence ? `<p class="confidence">${escapeHtml(item.evidence_confidence.level)} · ${escapeHtml(item.evidence_confidence.checks)} checks · ${escapeHtml(item.evidence_confidence.viewers)} viewers (self-reported)</p>` : ""}<p>${escapeHtml(item.evidence)}</p></article>`
   ).join("");
   const limits = data.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const actionSteps = data.action_plan.items.map((item) =>
@@ -464,13 +497,13 @@ function openPrintReport(scan) {
     return;
   }
   popup.document.write(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reachframe report · @${escapeHtml(data.handle)}</title><style>
-    body{font:16px/1.55 system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 22px;color:#202333;background:#fff}
+    body{font:16px/1.55 system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 22px;color:#202333;background:#fff}.confidence{color:#59614f;font-size:.88rem}
     h1{font-size:2rem;margin-bottom:4px}header p{color:#5e6272;margin-top:0}.score{font-size:1.5rem;font-weight:700;padding:14px 0}
     article{border:1px solid #dfe2eb;border-radius:12px;padding:16px;margin:12px 0;break-inside:avoid}
     article h2{font-size:1.1rem;margin:0 0 6px}article p{margin:8px 0 0}.limits,.plan{color:#545969;font-size:.9rem}.plan li{margin:8px 0}
     button{padding:10px 14px;border:0;border-radius:8px;background:#29314d;color:white;font:inherit;cursor:pointer}
     @media print{body{margin:0 auto}.no-print{display:none}}
-  </style><body><button class="no-print" onclick="window.print()">Print / Save PDF</button><header><h1>Visibility report · @${escapeHtml(data.handle)}</h1><p>${escapeHtml(data.evidence_source.label)} · ${escapeHtml(new Date(scan.checked*1000).toLocaleString())}</p></header><div class="score">${escapeHtml(score)}</div><p>${measured} of 4 surfaces measured. Observations reflect one viewer at one point in time.</p>${rows}<h2>Recommended next steps</h2><p>${escapeHtml(data.action_plan.summary)}</p><ol class="plan">${actionSteps}</ol><h2>Limitations</h2><ul class="limits">${limits}</ul></body></html>`);
+  </style><body><button class="no-print" onclick="window.print()">Print / Save PDF</button><header><h1>Visibility report · @${escapeHtml(data.handle)}</h1><p>${escapeHtml(data.evidence_source.label)} · ${escapeHtml(new Date(scan.checked*1000).toLocaleString())}</p></header><div class="score">${escapeHtml(score)}</div><p>${measured} of 4 surfaces measured. Confidence summaries use self-reported repeat-check and viewer counts; Reachframe does not verify those counts.</p>${rows}<h2>Recommended next steps</h2><p>${escapeHtml(data.action_plan.summary)}</p><ol class="plan">${actionSteps}</ol><h2>Limitations</h2><ul class="limits">${limits}</ul></body></html>`);
   popup.document.close();
 }
 
@@ -594,6 +627,8 @@ function report(scan, { focus = true } = {}) {
       ),
       node("p", result.detail),
     );
+    const confidence = confidenceLabel(result);
+    if (confidence && scan.source === "guided") card.append(node("small", "Self-reported confidence · " + confidence, "evidence-confidence"));
     grid.append(card);
   }
   const planData = buildActionPlan(scan);
@@ -625,7 +660,10 @@ function report(scan, { focus = true } = {}) {
           : "Save another check if visibility changes. Search and conversation results can differ by viewer.",
     ),
   );
-  panel.replaceChildren(head, coverage, grid, plan, advice);
+  const confidenceNote = scan.source === "guided" && statuses.some((entry) => evidenceConfidence(entry))
+    ? node("small", "Confidence uses only the repeat-check and viewer counts you entered. Reachframe does not independently verify these counts; labels are not probabilities or X enforcement signals.", "confidence-disclosure")
+    : null;
+  panel.replaceChildren(head, coverage, ...(confidenceNote ? [confidenceNote] : []), grid, plan, advice);
   if (scan.source === "sample") {
     const samples = node("div", null, "actions");
     samples.setAttribute("role", "group");
@@ -887,6 +925,21 @@ function start(handle, focus = true) {
       option.value = value;
       select.append(option);
     }
+    const countGroup = node("div", null, "replication-fields");
+    for (const [suffix, caption, noun] of [
+      ["checks", "Repeat checks", "check"], ["viewers", "Separate viewers", "viewer"],
+    ]) {
+      const fieldLabel = node("label", caption + " · self-reported");
+      const countSelect = node("select");
+      countSelect.name = key + "_" + suffix;
+      countSelect.setAttribute("aria-label", label + " " + caption.toLowerCase() + " (self-reported)");
+      countSelect.append(new Option("Not recorded", ""));
+      countSelect.append(new Option("1 " + noun, "1"));
+      countSelect.append(new Option("2 " + noun + "s", "2"));
+      countSelect.append(new Option("3+ " + noun + "s", "3"));
+      fieldLabel.append(countSelect);
+      countGroup.append(fieldLabel);
+    }
     const evidenceLabel = node("label", "Evidence note (optional)", "evidence-label");
     evidenceLabel.htmlFor = key + "_detail";
     const evidence = node("textarea");
@@ -896,7 +949,7 @@ function start(handle, focus = true) {
     evidence.rows = 2;
     evidence.placeholder = "Viewer, search phrase, time, or why this could not be checked";
     evidence.setAttribute("aria-label", label + " evidence note");
-    card.append(heading, description, link, select, evidenceLabel, evidence);
+    card.append(heading, description, link, select, countGroup, evidenceLabel, evidence);
     questions.append(card);
   }
   $("#guided").hidden = false;
@@ -910,7 +963,7 @@ function start(handle, focus = true) {
 }
 
 function updateProgress() {
-  const recorded = [...$("#questions").querySelectorAll("select")].filter(
+  const recorded = [...$("#questions").querySelectorAll("select[id]")].filter(
     (select) => select.value !== "unknown",
   ).length;
   $("#progress").textContent = recorded + " of 4 recorded";
