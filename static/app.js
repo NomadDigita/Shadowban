@@ -43,16 +43,26 @@ const choices = {
 };
 const isMeasuredStatus = (status) => status === "visible" || status === "missing";
 function evidenceConfidence(entry) {
-  const checks = Number(entry?.checks);
-  const viewers = Number(entry?.viewers);
-  if (!isMeasuredStatus(entry?.status) || ![1, 2, 3].includes(checks) || ![1, 2, 3].includes(viewers)) return null;
-  const level = checks >= 3 && viewers >= 2 ? "Corroborated" :
-    checks >= 2 || viewers >= 2 ? "Repeated" : "Single observation";
-  return { level, checks: checks === 3 ? "3+" : String(checks), viewers: viewers === 3 ? "3+" : String(viewers) };
+  const checks = [1, 2, 3].includes(Number(entry?.checks)) ? Number(entry.checks) : null;
+  const viewers = [1, 2, 3].includes(Number(entry?.viewers)) ? Number(entry.viewers) : null;
+  if (!isMeasuredStatus(entry?.status) || (checks === null && viewers === null)) return null;
+  const level = checks !== null && checks >= 3 && viewers !== null && viewers >= 2
+    ? "Corroborated"
+    : (checks !== null && checks >= 2) || (viewers !== null && viewers >= 2)
+      ? "Repeated"
+      : checks !== null && viewers !== null
+        ? "Single observation"
+        : "Partial self-report";
+  return {
+    level,
+    checks: checks === 3 ? "3+" : checks === null ? null : String(checks),
+    viewers: viewers === 3 ? "3+" : viewers === null ? null : String(viewers),
+  };
 }
 function confidenceLabel(entry) {
   const confidence = evidenceConfidence(entry);
-  const labelCount = (value, singular) => value === "3+" ? "3+ " + singular + "s" : countLabel(Number(value), singular);
+  const labelCount = (value, singular) => value === null ? singular + " count not reported" :
+    value === "3+" ? "3+ " + singular + "s" : countLabel(Number(value), singular);
   return confidence ? confidence.level + " · " +
     labelCount(confidence.checks, "check") + " · " +
     labelCount(confidence.viewers, "viewer") : null;
@@ -299,10 +309,10 @@ async function api(route, data) {
     key,
     {
       status: values[key],
-      ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_checks"]) &&
-        [ "1", "2", "3" ].includes(values[key + "_viewers"])
-        ? { checks: Number(values[key + "_checks"]), viewers: Number(values[key + "_viewers"]) }
-        : {}),
+      ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_checks"])
+        ? { checks: Number(values[key + "_checks"]) } : {}),
+      ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_viewers"])
+        ? { viewers: Number(values[key + "_viewers"]) } : {}),
       detail: String(values[key + "_detail"] || "").trim().slice(0, 280) ||
         (values[key] === "untestable"
           ? "The relevant view could not be assessed during this check."
@@ -438,7 +448,7 @@ function reportData(scan) {
       "These observations do not establish an official X moderation decision.",
       "Visibility can vary by viewer and time. Untestable and unmeasured surfaces are excluded from the visibility score.",
       "Guided results and any repeat-check or viewer counts reflect user-entered, self-reported information. Reachframe does not independently verify them.",
-      "Confidence labels are a transparent summary of the reported counts: repeated means 2+ checks or viewers; corroborated means 3+ checks across at least 2 viewers. They are not probabilities or X enforcement signals.",
+      "Confidence labels are a transparent summary of reported counts: repeated means 2+ checks or viewers; corroborated means 3+ checks across at least 2 viewers; a partial self-report means one count dimension was omitted. They are not probabilities or X enforcement signals.",
     ],
   };
 }
