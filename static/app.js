@@ -52,9 +52,10 @@ function evidenceConfidence(entry) {
 }
 function confidenceLabel(entry) {
   const confidence = evidenceConfidence(entry);
+  const labelCount = (value, singular) => value === "3+" ? "3+ " + singular + "s" : countLabel(Number(value), singular);
   return confidence ? confidence.level + " · " +
-    (confidence.checks === "3+" ? "3+" : confidence.checks) + " checks · " +
-    (confidence.viewers === "3+" ? "3+" : confidence.viewers) + " viewers" : null;
+    labelCount(confidence.checks, "check") + " · " +
+    labelCount(confidence.viewers, "viewer") : null;
 }
 let activeHandle;
 let state;
@@ -410,7 +411,7 @@ function reportData(scan) {
   const visible = fields.filter(([key]) => scan.results[key].status === "visible").length;
   const untestable = fields.filter(([key]) => scan.results[key].status === "untestable").length;
   return {
-    schema_version: 2,
+    schema_version: 3,
     report_id: scan.id,
     platform: "X",
     handle: scan.handle,
