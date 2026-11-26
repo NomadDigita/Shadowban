@@ -777,8 +777,15 @@ function priorComparison(scan) {
     if (!isMeasuredStatus(beforeStatus) || !isMeasuredStatus(afterStatus)) continue;
     const before = observationLabel(key, beforeStatus);
     const after = observationLabel(key, afterStatus);
+    const beforeConfidence = confidenceLabel(prior.results[key]);
+    const afterConfidence = confidenceLabel(scan.results[key]);
+    const confidenceChange = beforeConfidence || afterConfidence
+      ? " · self-reported evidence: " + (beforeConfidence || "not reported") +
+        " → " + (afterConfidence || "not reported")
+      : "";
     list.append(node("li", label + " · " +
-      (before === after ? after + " (unchanged)" : before + " → " + after)));
+      (before === after ? after + " (unchanged)" : before + " → " + after) +
+      confidenceChange));
   }
   if (!list.children.length) {
     list.append(node("li", "No comparable measured surfaces across these reports."));
