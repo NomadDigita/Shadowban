@@ -4,7 +4,7 @@ Reachframe is an independent workspace for checking how a public X account appea
 
 ## Use the hosted app
 
-Enter a public X handle and start a guided check. Follow the links and record the surfaces you can verify from another viewer account. A report shows the share of measured surfaces that were visible, alongside the number of measured surfaces. Reports describe observations that can vary by viewer; X account notices remain the source for official moderation decisions.
+Enter a public X handle and start a guided check. Follow the links and record the surfaces you can verify from another viewer account. A report shows the share of measured surfaces that were visible, alongside the number of measured surfaces. For measured outcomes, you can optionally record how many times you repeated the check and how many separate viewers checked it. Reachframe labels this confidence summary from your self-reported counts; it does not independently verify them, calculate a probability, or infer an X enforcement decision. Reports describe observations that can vary by viewer; X account notices remain the source for official moderation decisions.
 
 Choose Light or Dark to set the browser theme. The fictional sample offers scenarios that do not save data. Saved reports can be filtered by account and compared with earlier observations.
 
@@ -26,7 +26,7 @@ Every saved report includes suggested follow-up steps derived only from the reco
 
 Open a saved report and choose Download JSON, Print report, or Copy share link. Share links encode only the public handle, check time, and the four recorded outcomes; they do not include account IDs, email addresses, or cloud data. Anyone with a share link can view those included details. Shared links are not signed, and Reachframe cannot independently verify who recorded the observations or whether a link’s contents were edited. Choose Download full history CSV in Scan history to export saved reports. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
 
-Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
+Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Guided JSON/CSV/print exports also include optional self-reported repeat-check and viewer counts with the resulting plain-language confidence label. These fields are omitted when not reported and are not independently verified. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
 
 ## Community data and alerts
 
