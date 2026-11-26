@@ -15,14 +15,14 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 | Area | Reachframe implementation | Parity |
 | --- | --- | --- |
 | Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context. | Workflow aligned; no automatic X inspection |
-| Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. | Strong workflow parity; source confidence and independent provider evidence absent |
+| Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. Guided outcomes can include optional self-reported repeat-check and separate-viewer counts, summarized as single observation, repeated, or corroborated. | Strong workflow parity; labels summarize user-entered counts, with no independent provider evidence |
 | Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, share privacy handling, and device-only manual recheck reminders. | Core account history parity; reminder prompts do not collect data or run scans |
 | Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
 | Community | Opt-in aggregate observations and an opt-in alias-based contributor activity board, gated by minimum participation. | First-party aggregate signal, not an X-account leaderboard |
 | Education | Four quick guides plus ten FAQ answers covering checks, uncertainty, data, privacy, and next steps. | Disclosed workflow and help coverage expanded; no localized content library yet |
 | Design | Original Reachframe visual identity, responsive layout, dark/light themes, and a source-methodology guide. | Source-inspired, not pixel-identical |
 
-The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes.
+The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes or repeat/viewer counts. Confidence labels are a count-based description: “repeated” means 2+ checks or viewers; “corroborated” means 3+ checks across at least 2 viewers. They are not probability estimates.
 
 ## Remaining gaps to source-level behavior
 
@@ -31,7 +31,7 @@ The checker records what a person can verify in X. It does not claim to know X's
 3. **Account leaderboard and statistics:** Reachframe has opt-in aggregates, but no verified public X metrics, topic filters, rank history, or large-scale account leaderboard.
 4. **In-app mention feed:** The builder opens a real X search. Reachframe does not fetch, store, or rank mention posts.
 5. **Educational coverage:** Expand guide, FAQ, statistics, and account-state handling (private/no-post accounts, unavailable replies, and provider-confidence states).
-6. **Data rollout:** The untestable status requires a Supabase constraint migration. Apply it to the Reachframe project before deploying that branch to production.
+6. **Privacy controls and accessibility:** Continue reviewing consent, export behavior, keyboard access, and small-screen layouts as community and report features expand.
 
 ## Parity limit
 
