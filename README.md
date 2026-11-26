@@ -26,7 +26,7 @@ Every saved report includes suggested follow-up steps derived only from the reco
 
 Open a saved report and choose Download JSON, Print report, or Copy share link. Share links encode only the public handle, check time, and the four recorded outcomes; they do not include account IDs, email addresses, or cloud data. Anyone with a share link can view those included details. Shared links are not signed, and Reachframe cannot independently verify who recorded the observations or whether a link’s contents were edited. Choose Download full history CSV in Scan history to export saved reports. CSV fields that could be interpreted as spreadsheet formulas are prefixed with an apostrophe.
 
-Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Guided JSON/CSV/print exports also include optional self-reported repeat-check and viewer counts with the resulting plain-language confidence label. These fields are omitted when not reported and are not independently verified. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
+Exports include UTC timestamps, evidence source, measured coverage, individual outcomes and interpretation limits. Guided JSON/CSV/print exports also include optional self-reported repeat-check and viewer counts with the resulting plain-language confidence label. Each count can be recorded independently; missing values are left blank, and the report marks an incomplete pair as a partial self-report. Counts are not independently verified. Fictional samples are excluded. Visibility percentage is null or blank when no surfaces were measured.
 
 ## Community data and alerts
 
