@@ -6,7 +6,7 @@ Reachframe is an independent workspace for checking how a public X account appea
 
 Enter a public X handle and start a guided check. Follow the links and record the surfaces you can verify from another viewer account. A report shows the share of measured surfaces that were visible, alongside the number of measured surfaces. For measured outcomes, you can optionally record how many times you repeated the check and how many separate viewers checked it. Reachframe labels this confidence summary from your self-reported counts; it does not independently verify them, calculate a probability, or infer an X enforcement decision. Reports describe observations that can vary by viewer; X account notices remain the source for official moderation decisions.
 
-Choose Light or Dark to set the browser theme. The fictional sample offers scenarios that do not save data. Saved reports can be filtered by account and compared with earlier observations.
+Choose Light or Dark to set the browser theme. The fictional sample offers scenarios that do not save data. Saved reports can be filtered by account and compared with earlier outcomes and any self-reported repeat-check/viewer counts.
 
 Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. Unmeasured observations do not replace the last measured result in comparisons. Set an optional daily, three-day, weekly, or two-week reminder for a manual recheck. Reminder schedules are stored in this browser and are evaluated only while Reachframe is open; they do not run scans or send email or Telegram alerts.
 
