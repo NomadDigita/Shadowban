@@ -14,7 +14,7 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 
 | Area | Reachframe implementation | Parity |
 | --- | --- | --- |
-| Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context. | Workflow aligned; no automatic X inspection |
+| Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context, and untestable surfaces can carry a structured reason. | Workflow aligned; no automatic X inspection |
 | Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. Guided outcomes can include optional self-reported repeat-check and separate-viewer counts, summarized as single observation, repeated, or corroborated. | Strong workflow parity; labels summarize user-entered counts, with no independent provider evidence |
 | Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, share privacy handling, and device-only manual recheck reminders. | Core account history parity; reminder prompts do not collect data or run scans |
 | Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
