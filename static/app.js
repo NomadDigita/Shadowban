@@ -953,7 +953,7 @@ function start(handle, focus = true) {
 }
 
 function updateProgress() {
-  const recorded = [...$("#questions").querySelectorAll("select")].filter(
+  const recorded = [...$("#questions").querySelectorAll("select[id]")].filter(
     (select) => select.value !== "unknown",
   ).length;
   $("#progress").textContent = recorded + " of 4 recorded";
