@@ -41,6 +41,15 @@ const choices = {
   untestable: "Untestable",
   unknown: "Unmeasured",
 };
+const untestableReasons = {
+  suggestions: [["private", "Profile is private"], ["unavailable", "Profile could not be opened"], ["other", "Other"]],
+  search: [["private", "Account or post is private"], ["no_recent_post", "No suitable recent public post"], ["unavailable", "Post could not be opened"], ["other", "Other"]],
+  thread: [["private", "Account or conversation is private"], ["no_recent_reply", "No suitable recent reply"], ["incomplete_thread", "Full conversation or expanded replies unavailable"], ["other", "Other"]],
+  placement: [["private", "Account or conversation is private"], ["unavailable", "Conversation could not be opened"], ["alternate_view_unavailable", "Alternate or expanded replies view unavailable"], ["other", "Other"]],
+};
+function untestableReasonLabel(key, reason) {
+  return untestableReasons[key]?.find(([value]) => value === reason)?.[1] || null;
+}
 const isMeasuredStatus = (status) => status === "visible" || status === "missing";
 function evidenceConfidence(entry) {
   const checks = [1, 2, 3].includes(Number(entry?.checks)) ? Number(entry.checks) : null;
@@ -309,6 +318,8 @@ async function api(route, data) {
     key,
     {
       status: values[key],
+      ...(values[key] === "untestable" && untestableReasons[key].some(([value]) => value === values[key + "_reason"])
+        ? { untestable_reason: values[key + "_reason"] } : {}),
       ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_checks"])
         ? { checks: Number(values[key + "_checks"]) } : {}),
       ...(isMeasuredStatus(values[key]) && [ "1", "2", "3" ].includes(values[key + "_viewers"])
@@ -373,10 +384,12 @@ function buildActionPlan(scan) {
         instruction: followUpInstructions[key],
       });
     } else if (status === "untestable") {
+      const reason = untestableReasonLabel(key, scan.results[key]?.untestable_reason);
       items.push({
         priority: "Retry when available",
         surface: label,
-        instruction: "This view could not be assessed, so it is not evidence of a visibility problem. Retry when the complete surface is available. " + followUpInstructions[key],
+        instruction: (reason ? "Recorded reason: " + reason + ". " : "") +
+          "This view could not be assessed, so it is not evidence of a visibility problem. Retry when the complete surface is available. " + followUpInstructions[key],
       });
     } else if (status === "unknown") {
       items.push({
@@ -442,6 +455,7 @@ function reportData(scan) {
       outcome: scan.results[key].status,
       outcome_label: observationLabel(key, scan.results[key].status),
       evidence: scan.results[key].detail,
+      untestable_reason: untestableReasonLabel(key, scan.results[key].untestable_reason),
       evidence_confidence: evidenceConfidence(scan.results[key]),
     })),
     limitations: [
@@ -463,14 +477,14 @@ function csvCell(value) {
 function downloadHistoryCsv() {
   const headers = ["report_id", "handle", "captured_at_utc", "evidence_source",
     "total_surfaces", "measured_surfaces", "visible_surfaces", "unmeasured_surfaces", "visibility_percent",
-    ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence", key + "_checks_self_reported", key + "_viewers_self_reported", key + "_confidence_label"]), "limitations"];
+    ...fields.flatMap(([key]) => [key + "_outcome", key + "_evidence", key + "_untestable_reason", key + "_checks_self_reported", key + "_viewers_self_reported", key + "_confidence_label"]), "limitations"];
   const rows = (state?.history || readWorkspace().history).map((scan) => {
     const report = reportData(scan);
     const c = report.coverage;
     return [
       scan.id, scan.handle, report.captured_at_utc, scan.source,
       c.total_surfaces, c.measured_surfaces, c.visible_surfaces, c.unmeasured_surfaces, c.visibility_percent,
-      ...report.observations.flatMap((item) => [item.outcome_label, item.evidence,
+      ...report.observations.flatMap((item) => [item.outcome_label, item.evidence, item.untestable_reason || "",
         item.evidence_confidence?.checks || "", item.evidence_confidence?.viewers || "",
         item.evidence_confidence?.level || ""]),
       report.limitations.join(" "),
@@ -482,7 +496,7 @@ function downloadHistoryCsv() {
 function openPrintReport(scan) {
   const data = reportData(scan);
   const rows = data.observations.map((item) =>
-    `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong>${item.evidence_confidence ? `<p class="confidence">${escapeHtml(item.evidence_confidence.level)} · ${escapeHtml(item.evidence_confidence.checks)} checks · ${escapeHtml(item.evidence_confidence.viewers)} viewers (self-reported)</p>` : ""}<p>${escapeHtml(item.evidence)}</p></article>`
+    `<article><h2>${escapeHtml(item.label)}</h2><strong>${escapeHtml(item.outcome_label)}</strong>${item.untestable_reason ? `<p class="reason"><strong>Why untestable:</strong> ${escapeHtml(item.untestable_reason)}</p>` : ""}${item.evidence_confidence ? `<p class="confidence">${escapeHtml(item.evidence_confidence.level)} · ${escapeHtml(item.evidence_confidence.checks)} checks · ${escapeHtml(item.evidence_confidence.viewers)} viewers (self-reported)</p>` : ""}<p>${escapeHtml(item.evidence)}</p></article>`
   ).join("");
   const limits = data.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   const actionSteps = data.action_plan.items.map((item) =>
@@ -627,6 +641,8 @@ function report(scan, { focus = true } = {}) {
       ),
       node("p", result.detail),
     );
+    const reason = result.status === "untestable" ? untestableReasonLabel(key, result.untestable_reason) : null;
+    if (reason) card.append(node("small", "Why untestable · " + reason, "untestable-reason"));
     const confidence = confidenceLabel(result);
     if (confidence && scan.source === "guided") card.append(node("small", "Self-reported confidence · " + confidence, "evidence-confidence"));
     grid.append(card);
@@ -932,6 +948,19 @@ function start(handle, focus = true) {
       option.value = value;
       select.append(option);
     }
+    const reasonLabel = node("label", "Why was this untestable? (optional)", "untestable-reason-field");
+    reasonLabel.hidden = true;
+    const reasonSelect = node("select");
+    reasonSelect.name = key + "_reason";
+    reasonSelect.setAttribute("aria-label", label + " reason it was untestable");
+    reasonSelect.append(new Option("Reason not recorded", ""));
+    for (const [value, text] of untestableReasons[key]) reasonSelect.append(new Option(text, value));
+    reasonLabel.append(reasonSelect);
+    select.addEventListener("change", () => {
+      reasonLabel.hidden = select.value !== "untestable";
+      if (select.value !== "untestable") reasonSelect.value = "";
+      updateProgress();
+    });
     const countGroup = node("div", null, "replication-fields");
     for (const [suffix, caption, noun] of [
       ["checks", "Repeat checks", "check"], ["viewers", "Separate viewers", "viewer"],
@@ -956,7 +985,7 @@ function start(handle, focus = true) {
     evidence.rows = 2;
     evidence.placeholder = "Viewer, search phrase, time, or why this could not be checked";
     evidence.setAttribute("aria-label", label + " evidence note");
-    card.append(heading, description, link, select, countGroup, evidenceLabel, evidence);
+    card.append(heading, description, link, select, reasonLabel, countGroup, evidenceLabel, evidence);
     questions.append(card);
   }
   $("#guided").hidden = false;
