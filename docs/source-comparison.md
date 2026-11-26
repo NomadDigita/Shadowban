@@ -22,7 +22,7 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 | Education | Four quick guides plus ten FAQ answers covering checks, uncertainty, data, privacy, and next steps. | Disclosed workflow and help coverage expanded; no localized content library yet |
 | Design | Original Reachframe visual identity, responsive layout, dark/light themes, and a source-methodology guide. | Source-inspired, not pixel-identical |
 
-The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes or repeat/viewer counts. Confidence labels are a count-based description: “repeated” means 2+ checks or viewers; “corroborated” means 3+ checks across at least 2 viewers. They are not probability estimates.
+The checker records what a person can verify in X. It does not claim to know X's internal moderation state, infer a cause, or independently verify user-entered notes or repeat/viewer counts. Confidence labels are a count-based description: “repeated” means 2+ checks or viewers; “corroborated” means 3+ checks across at least 2 viewers; “partial self-report” means one of the two optional count fields was left blank. They are not probability estimates.
 
 ## Remaining gaps to source-level behavior
 
