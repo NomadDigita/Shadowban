@@ -58,6 +58,19 @@
                 <button id="recovery-cancel" type="button" class="text-button">Cancel</button>
               </div>
             </form>
+                      <section id="account-danger" class="account-danger" aria-labelledby="account-danger-heading" hidden>
+              <div class="auth-heading"><strong id="account-danger-heading">Account data</strong><span>Manage your synced Reachframe account.</span></div>
+              <p class="account-danger-copy">Delete your sign-in and synced reports, watchlist, and preferences. This cannot be undone. Any guest data stored in this browser remains on this device.</p>
+              <button id="account-delete-open" type="button" class="text-button">Delete cloud account</button>
+              <div id="account-delete-confirmation" aria-label="Confirm account deletion" hidden>
+                <label for="account-delete-confirm">Type DELETE to confirm</label>
+                <input id="account-delete-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+                <div class="auth-actions">
+                  <button id="account-delete-cancel" type="button" class="text-button">Cancel</button>
+                  <button id="account-delete-submit" type="button" class="secondary">Delete account and synced data</button>
+                </div>
+              </div>
+            </section>
           </details>
         </div>
         <div class="themes" role="group" aria-label="Color theme">
