@@ -8,6 +8,7 @@
   const status = $("#community-status");
   const optIn = $("#community-share");
   const boardOptIn = $("#community-board-optin");
+  const emailAlerts = $("#community-email-alerts");
   const alias = $("#community-alias");
   const saveButton = $("#community-save");
   let currentUser = null;
@@ -101,9 +102,11 @@
       root.dataset.signedIn = "false";
       optIn.checked = false;
       boardOptIn.checked = false;
+      emailAlerts.checked = false;
       alias.value = "";
       optIn.disabled = true;
       boardOptIn.disabled = true;
+      emailAlerts.disabled = true;
       alias.disabled = true;
       saveButton.disabled = true;
       message("Sign in to choose whether your observations appear in the community benchmark.", "muted");
@@ -112,19 +115,26 @@
     root.dataset.signedIn = "true";
     optIn.disabled = false;
     boardOptIn.disabled = false;
+    emailAlerts.disabled = false;
     alias.disabled = false;
     saveButton.disabled = false;
-    const { data, error } = await client.from("reachframe_community_members")
-      .select("share_observations,show_on_leaderboard,public_alias")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (error) {
+    const [membership, notificationSettings] = await Promise.all([
+      client.from("reachframe_community_members")
+        .select("share_observations,show_on_leaderboard,public_alias")
+        .eq("user_id", user.id).maybeSingle(),
+      client.from("reachframe_notification_preferences")
+        .select("email_observation_changes")
+        .eq("user_id", user.id).maybeSingle(),
+    ]);
+    if (membership.error || notificationSettings.error) {
       message("Could not load your sharing settings. Apply the latest Supabase migration first.", "error");
       return;
     }
+    const data = membership.data;
     optIn.checked = Boolean(data?.share_observations);
     boardOptIn.checked = Boolean(data?.show_on_leaderboard);
     alias.value = data?.public_alias || "";
+    emailAlerts.checked = Boolean(notificationSettings.data?.email_observation_changes);
     message(data?.share_observations
       ? "Sharing is on. You can turn it off at any time."
       : "Your reports stay private unless you turn sharing on.", "muted");
@@ -151,10 +161,17 @@
       public_alias: boardOptIn.checked ? alias.value.trim() : null,
       updated_at: new Date().toISOString(),
     };
-    const { error } = await client.from("reachframe_community_members").upsert(record, { onConflict: "user_id" });
+    const [communitySave, notificationSave] = await Promise.all([
+      client.from("reachframe_community_members").upsert(record, { onConflict: "user_id" }),
+      client.from("reachframe_notification_preferences").upsert({
+        user_id: currentUser.id,
+        email_observation_changes: emailAlerts.checked,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" }),
+    ]);
     saveInFlight = false;
     saveButton.disabled = false;
-    if (error) {
+    if (communitySave.error || notificationSave.error) {
       message("Settings were not saved. Apply the latest Supabase migration and try again.", "error");
       return;
     }
