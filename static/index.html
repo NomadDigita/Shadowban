@@ -43,7 +43,19 @@
               <div class="auth-actions">
                 <button id="auth-submit" type="submit">Sign in</button>
                 <button id="auth-mode" type="button" class="text-button">Create account</button>
+                <button id="auth-reset" type="button" class="text-button">Forgot password?</button>
                 <button id="auth-signout" type="button" class="secondary" hidden>Sign out</button>
+              </div>
+            </form>
+            <form id="recovery-form" aria-label="Choose a new password" hidden>
+              <div class="auth-heading"><strong>Choose a new password</strong><span>Use at least 8 characters.</span></div>
+              <label for="recovery-password">New password</label>
+              <input id="recovery-password" type="password" autocomplete="new-password" minlength="8" required />
+              <label for="recovery-confirm">Confirm new password</label>
+              <input id="recovery-confirm" type="password" autocomplete="new-password" minlength="8" required />
+              <div class="auth-actions">
+                <button id="recovery-submit" type="submit">Update password</button>
+                <button id="recovery-cancel" type="button" class="text-button">Cancel</button>
               </div>
             </form>
           </details>

@@ -97,6 +97,10 @@ button { color: inherit; }
 .account input { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; color: var(--ink); background: var(--surface-2); }
 .auth-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 5px; }
 .auth-actions button { min-height: 37px; padding: 7px 12px; font-size: .82rem; }
+.auth-actions .text-button { padding-inline: 4px; color: var(--muted); background: transparent; border: 0; }
+.auth-actions .text-button:hover { color: var(--ink); text-decoration: underline; }
+#recovery-form { position: absolute; z-index: 12; top: calc(100% + 10px); right: 0; width: min(340px, calc(100vw - 28px)); display: grid; gap: 8px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
+#recovery-form[hidden] { display: none; }
 .themes { display: flex; align-items: center; gap: 2px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 3px; }
 .themes button { border: 0; min-height: 31px; padding: 4px 9px; border-radius: 6px; background: transparent; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; font-size: .76rem; font-weight: 650; white-space: nowrap; }
 .themes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px #00000010; }
