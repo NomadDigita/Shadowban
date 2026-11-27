@@ -8,7 +8,7 @@ Enter a public X handle and start a guided check. Follow the links and record th
 
 Choose Light or Dark to set the browser theme. The fictional sample offers scenarios that do not save data. Saved reports can be filtered by account and compared with earlier outcomes and any self-reported repeat-check/viewer counts.
 
-Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. Unmeasured observations do not replace the last measured result in comparisons. Set an optional daily, three-day, weekly, or two-week reminder for a manual recheck. Reminder schedules are stored in this browser and are evaluated only while Reachframe is open; they do not run scans or send email or Telegram alerts.
+Add a handle to the watchlist for quick access. Record another guided check to see measured changes for the same handle. Unmeasured observations do not replace the last measured result in comparisons. Set an optional daily, three-day, weekly, or two-week reminder for a manual recheck. Reminder schedules are stored in this browser and are evaluated only while Reachframe is open; they do not run scans or send reminder emails or Telegram alerts.
 
 ## Accounts and saved data
 
@@ -19,6 +19,8 @@ The browser uses a Supabase publishable key in `static/config.js`. Publishable k
 Email confirmation behavior follows the Supabase Auth project settings. For production signup, configure the project’s Site URL and allowed redirect URLs for the deployed Reachframe origin. Public email delivery may also require a custom SMTP provider.
 
 Signed-in members can request a password reset from the account menu. Supabase sends the recovery email and returns to the deployed Reachframe origin, where the member chooses a new password. Keep the production origin and any preview origins used for testing in Supabase Auth's allowed redirect URL list; the site never handles or stores email-provider credentials.
+
+Signed-in members can also opt in to email notifications when a newly saved guided report changes a previously measured surface. Notifications use the account email from Supabase Auth and are sent by the `reachframe-email-alert` Edge Function through Resend. They report changes in observations entered by the member; they do not run X checks. Keep `RESEND_API_KEY` in Supabase Edge Function secrets, restrict it to the verified sending domain, and set `REACHFRAME_FROM_EMAIL` to a sender on that same domain.
 
 ## Evidence-based action plans
 
@@ -51,7 +53,7 @@ The repository is configured as a static Vercel site with output directory `stat
 ## Limitations
 
 - Reports reflect the views checked at that time. They cannot confirm an X moderation decision or reproduce every viewer’s results.
-- The public site does not run automated post-search checks or email alerts.
+- The public site does not run automated X checks. Email alerts require opt-in and a configured sender, and only report changes in saved guided observations.
 - Guest workspace data is limited to this browser and device; sign in for cloud sync.
 
 ## Public product research

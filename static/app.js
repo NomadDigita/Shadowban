@@ -1366,7 +1366,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const results = Object.fromEntries(new FormData(event.currentTarget));
     void work(event.submitter, async () => {
       const scan = await api("manual", { handle, results });
-      notice("Saved observations for @" + handle + ".");
+      let savedMessage = "Saved observations for @" + handle + ".";
+      if (cloudClient && scan.id && state?.cloud) {
+        try {
+          const { data: alert, error } = await cloudClient.functions.invoke("reachframe-email-alert", {
+            body: { scanId: scan.id },
+          });
+          if (!error && alert?.sent) savedMessage += " Email alert sent.";
+          else if (error || alert?.reason === "email_provider_not_configured") {
+            savedMessage += " The email alert could not be sent.";
+          }
+        } catch {
+          savedMessage += " The email alert could not be sent.";
+        }
+      }
+      notice(savedMessage);
       await refresh();
       report(scan);
     });

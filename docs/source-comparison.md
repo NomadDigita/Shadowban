@@ -16,7 +16,7 @@ Reviewed against ShadowbanRadar's public homepage, checker, methodology, leaderb
 | --- | --- | --- |
 | Core check | Four guided, user-verified visibility observations; visible, missing, untestable, and unmeasured are distinct. Optional notes preserve query/viewer context, and untestable surfaces can carry a structured reason. | Workflow aligned; no automatic X inspection |
 | Results | Measured-only percentage, dated report, action plan, caveats, share link, print/PDF, JSON, and CSV exports. Guided outcomes can include optional self-reported repeat-check and separate-viewer counts, summarized as single observation, repeated, or corroborated. | Strong workflow parity; labels summarize user-entered counts, with no independent provider evidence |
-| Workspace | Email/password sign-in, Supabase-backed private history/watchlist, guest browser storage, history comparisons, share privacy handling, and device-only manual recheck reminders. | Core account history parity; reminder prompts do not collect data or run scans |
+| Workspace | Email/password sign-in and recovery, Supabase-backed private history/watchlist, guest browser storage, history comparisons, share privacy handling, device-only manual recheck reminders, and opt-in email alerts for changed user-entered observations. | Core account history parity; alerts do not run X checks |
 | Mentions | Search builder for mentions, replies to an account, and posts by an account. Opens the real query on X. | Discovery workflow; no in-app feed or ranking |
 | Community | Opt-in aggregate observations and an opt-in alias-based contributor activity board, gated by minimum participation. | First-party aggregate signal, not an X-account leaderboard |
 | Education | Four quick guides plus ten FAQ answers covering checks, uncertainty, data, privacy, and next steps. | Disclosed workflow and help coverage expanded; no localized content library yet |
@@ -27,7 +27,7 @@ The checker records what a person can verify in X. It does not claim to know X's
 ## Remaining gaps to source-level behavior
 
 1. **Provider-backed inspection:** Reachframe has no authorized data provider that can reliably inspect suggestions, search visibility, full conversations, and ranking. Until one is available, automatic results must not be fabricated.
-2. **Scheduled monitoring and alerts:** Watchlists save accounts, but do not run background checks or send daily email/Telegram alerts. These need an authorized provider and a delivery service.
+2. **Scheduled monitoring:** Watchlists save accounts, but do not run background X checks or send daily scan recaps. These need an authorized provider and X's approval for this visibility-analysis use case.
 3. **Account leaderboard and statistics:** Reachframe has opt-in aggregates, but no verified public X metrics, topic filters, rank history, or large-scale account leaderboard.
 4. **In-app mention feed:** The builder opens a real X search. Reachframe does not fetch, store, or rank mention posts.
 5. **Educational coverage:** Expand guide, FAQ, statistics, and account-state handling (private/no-post accounts, unavailable replies, and provider-confidence states).
