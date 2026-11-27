@@ -99,6 +99,11 @@ button { color: inherit; }
 .auth-actions button { min-height: 37px; padding: 7px 12px; font-size: .82rem; }
 .auth-actions .text-button { padding-inline: 4px; color: var(--muted); background: transparent; border: 0; }
 .auth-actions .text-button:hover { color: var(--ink); text-decoration: underline; }
+.account-danger { position: absolute; z-index: 12; top: calc(100% + 10px); right: 0; width: min(340px, calc(100vw - 28px)); display: grid; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
+.account-danger[hidden], #account-delete-confirmation[hidden] { display: none; }
+.account-danger-copy { margin: 0; color: var(--muted); font-size: .83rem; line-height: 1.5; }
+#account-delete-confirmation { display: grid; gap: 8px; }
+#account-delete-confirmation input { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface-2); }
 #recovery-form { position: absolute; z-index: 12; top: calc(100% + 10px); right: 0; width: min(340px, calc(100vw - 28px)); display: grid; gap: 8px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
 #recovery-form[hidden] { display: none; }
 .themes { display: flex; align-items: center; gap: 2px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 3px; }

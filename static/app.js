@@ -171,6 +171,7 @@ function updateAuthUI(user) {
   $("#auth-email").hidden = signedIn;
   $("#auth-password").hidden = signedIn;
   $("#auth-signout").hidden = !signedIn;
+  $("#account-danger").hidden = !signedIn;
   $("#auth-mode").textContent = authMode === "signin" ? "Create account" : "Have an account? Sign in";
   $("#auth-submit").textContent = authMode === "signin" ? "Sign in" : "Create account";
   $("#auth-form").setAttribute("aria-label", signedIn ? "Signed in account" : "Sign in or create an account");
@@ -1484,6 +1485,44 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     $("#recovery-cancel").addEventListener("click", closePasswordRecovery);
+    $("#account-delete-open").addEventListener("click", () => {
+      $("#account-delete-confirmation").hidden = false;
+      $("#account-delete-open").hidden = true;
+      $("#account-delete-confirm").focus();
+    });
+    $("#account-delete-cancel").addEventListener("click", () => {
+      $("#account-delete-confirm").value = "";
+      $("#account-delete-confirmation").hidden = true;
+      $("#account-delete-open").hidden = false;
+    });
+    $("#account-delete-submit").addEventListener("click", async () => {
+      if ($("#account-delete-confirm").value !== "DELETE") {
+        notice("Type DELETE exactly to confirm account removal.");
+        $("#account-delete-confirm").focus();
+        return;
+      }
+      const button = $("#account-delete-submit");
+      button.disabled = true;
+      try {
+        const { data, error } = await cloudClient.functions.invoke("reachframe-delete-account", {
+          body: { confirmation: "DELETE" },
+        });
+        if (error) throw error;
+        if (!data?.deleted) throw new Error("Account deletion could not be confirmed.");
+        const { error: signOutError } = await cloudClient.auth.signOut({ scope: "local" });
+        if (signOutError) throw signOutError;
+        currentOwnerId = null;
+        $("#account-delete-confirm").value = "";
+        $("#auth-panel").open = false;
+        updateAuthUI(null);
+        await refresh();
+        notice("Your Reachframe account and synced data were deleted. Guest data on this browser remains.");
+      } catch (error) {
+        notice(error.message || "Could not delete this account.");
+      } finally {
+        button.disabled = false;
+      }
+    });
     $("#auth-signout").addEventListener("click", async () => {
       const { error } = await cloudClient.auth.signOut();
       if (error) notice(error.message);
