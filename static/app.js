@@ -167,12 +167,33 @@ function updateAuthUI(user) {
   $("#auth-status").textContent = signedIn ? user.email : "Guest workspace · saved on this device";
   $("#auth-submit").hidden = signedIn;
   $("#auth-mode").hidden = signedIn;
+  $("#auth-reset").hidden = signedIn || authMode !== "signin";
   $("#auth-email").hidden = signedIn;
   $("#auth-password").hidden = signedIn;
   $("#auth-signout").hidden = !signedIn;
   $("#auth-mode").textContent = authMode === "signin" ? "Create account" : "Have an account? Sign in";
   $("#auth-submit").textContent = authMode === "signin" ? "Sign in" : "Create account";
   $("#auth-form").setAttribute("aria-label", signedIn ? "Signed in account" : "Sign in or create an account");
+}
+
+function isPasswordRecoveryCallback() {
+  return new URLSearchParams(window.location.search).has("recovery") ||
+    new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+}
+
+function showPasswordRecovery() {
+  $("#auth-panel").open = true;
+  $("#auth-form").hidden = true;
+  $("#recovery-form").hidden = false;
+  $("#recovery-password").focus();
+}
+
+function closePasswordRecovery() {
+  $("#recovery-form").hidden = true;
+  $("#auth-form").hidden = false;
+  $("#recovery-password").value = "";
+  $("#recovery-confirm").value = "";
+  window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 async function getCurrentUser() {
@@ -1373,8 +1394,12 @@ document.addEventListener("DOMContentLoaded", () => {
     void getCurrentUser().then(scheduleAuthRefresh)
       .catch((error) => notice("Cloud connection: " + error.message));
     cloudClient.auth.onAuthStateChange((_event, session) => {
+      if (_event === "PASSWORD_RECOVERY" || (session && isPasswordRecoveryCallback())) {
+        showPasswordRecovery();
+      }
       queueMicrotask(() => scheduleAuthRefresh(session?.user || null));
     });
+    if (isPasswordRecoveryCallback()) showPasswordRecovery();
     $("#auth-form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const email = $("#auth-email").value.trim();
@@ -1405,6 +1430,46 @@ document.addEventListener("DOMContentLoaded", () => {
       authMode = authMode === "signin" ? "signup" : "signin";
       updateAuthUI(null);
     });
+    $("#auth-reset").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      const email = $("#auth-email").value.trim();
+      if (!email) {
+        $("#auth-email").focus();
+        notice("Enter your account email first, then choose Forgot password again.");
+        return;
+      }
+      button.disabled = true;
+      try {
+        const redirectTo = new URL("/?recovery=1", window.location.origin).toString();
+        const { error } = await cloudClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+        notice("If that email has a Reachframe account, a password reset link is on its way.");
+      } catch (error) {
+        notice(error.message || "Could not request a password reset.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+    $("#recovery-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const password = $("#recovery-password").value;
+      const confirmation = $("#recovery-confirm").value;
+      if (password.length < 8) return notice("Use a password with at least 8 characters.");
+      if (password !== confirmation) return notice("The passwords do not match.");
+      const button = $("#recovery-submit");
+      button.disabled = true;
+      try {
+        const { error } = await cloudClient.auth.updateUser({ password });
+        if (error) throw error;
+        closePasswordRecovery();
+        notice("Password updated. Your Reachframe workspace is ready.");
+      } catch (error) {
+        notice(error.message || "Could not update your password.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+    $("#recovery-cancel").addEventListener("click", closePasswordRecovery);
     $("#auth-signout").addEventListener("click", async () => {
       const { error } = await cloudClient.auth.signOut();
       if (error) notice(error.message);
